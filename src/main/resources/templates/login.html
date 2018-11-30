@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="text/javascript">
+        function loadCode() {
+            var obj = document.getElementById("imge");
+            //直接粘贴这段就可以点击刷新验证码--实测生成的验证码和接口生成的一致
+            //实测最重要的是你把标签里的src的值(就是接口访问路径)拿来随便拼接一个
+            //经常变化的参数就可以实现验证码刷新,实测不拼接变化参数,就不能刷新验证码,
+            //跟据自己接口访问地址的情况,有参数可以先通过?切掉参数,如下操作即可
+            // obj.setAttribute("src", obj.getAttribute("src").toString().split("?")[0] + "?time=" + new Date().getTime());
+            obj.setAttribute("src", obj.getAttribute("src").toString() + "?a=" + new Date().getTime());
+        }
+
+        //校验验证码--let不可再变(再赋值无效),var可以
+        function check() {
+            //获取对象
+            var xhr = getXhr();
+            //获取输入框中的值
+            var code = $V("code");
+            //对输入框的值做URI编码(就是变成那种含有很多%的字符串)
+            code = encodeURIComponent(code);
+            //发送ajax请求
+            flag = xhr.onreadystatechange = function () {
+                var message = "";
+                //获取提交按钮标签
+                var reg = $("reg");
+                //判断请求完成可用
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var responseText = xhr.responseText;
+                    if ("expir" == responseText) {
+                        message = "验证码已过期";
+                        reg.setAttribute("disabled", "disabled");
+                    } else if ("true" == responseText) {
+                        message = "验证码正确"
+                        //取消禁用状态
+                        reg.removeAttribute("disabled");
+                    } else if ("false" == responseText) {
+                        message = "验证码错误";
+                        reg.setAttribute("disabled", "disabled");
+                    }
+                }
+                document.getElementById("msg1").innerHTML = message;
+            }
+            //符合要求的验证码才去校验
+            var regExp = new RegExp("^[a-zA-Z0-9]{4}$");
+            if (regExp.test(code)) {
+                xhr.open("get", "/verifyCodeCheck?verifyCode=" + code, true);
+                xhr.send(null);
+            }
+        }
+
+        //js抽取方法,实测放在最开头会打断加载
+        //抽取常用的方法
+        //根据id获取节点
+        function $(id) {
+            return document.getElementById(id);
+        }
+
+        //根据id获取节点的值
+        function $V(id) {
+            return $(id).value;
+        }
+
+        //获取ajax对象
+        function getXhr() {
+            //定制出xhr对象
+            var xhr = null;
+            if (window.XMLHttpRequest) {
+                //当前内核为非IE
+                xhr = new XMLHttpRequest();
+            } else {
+                //内核为IE(IE5 and IE6)
+                xhr = new ActiveXObject('Microsoft.XMLHttp')
+            }
+            return xhr;
+        }
+    </script>
+    <meta charset="UTF-8"/>
+    <title>我的登录</title>
+</head>
+<body>
+<table>
+    <form action="/frontLogin" method="post">
+        <tr>
+            <td align="center" colspan="2">
+                <h2 style="color: red">登录中心</h2>
+            </td>
+        </tr>
+        <tr>
+            <td  align="center">用户名</td>
+            <td><input type="text" name="username"></td>
+        </tr>
+        <tr>
+            <td align="center">密码</td>
+            <td><input type="password" name="password"></td>
+        </tr>
+        <tr>
+            <td align="center" id="aa">验证码</td>
+            <td><input type="text" id="code" onkeyup="check()"></td>
+            <td><img src="/verifyCode" id="imge" onclick="loadCode(this)"></td>
+            <td><span style="color: red" id="msg1"></span></td>
+        </tr>
+        <tr>
+            <td  align="center"><input type="submit" disabled="disabled" id="reg" value="登录"></td>
+            <td><a href="register">注册</a></td>
+        </tr>
+        <tr>
+            <td  align="center">
+                <dev th:text="${msg}" style="color: red"></dev>
+            </td>
+        </tr>
+    </form>
+</table>
+</body>
+</html>

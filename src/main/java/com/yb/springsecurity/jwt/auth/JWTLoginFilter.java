@@ -1,4 +1,4 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yb.springsecurity.jwt.common.ResultInfo;

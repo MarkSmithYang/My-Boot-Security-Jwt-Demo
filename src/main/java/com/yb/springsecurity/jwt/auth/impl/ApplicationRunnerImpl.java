@@ -1,4 +1,4 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

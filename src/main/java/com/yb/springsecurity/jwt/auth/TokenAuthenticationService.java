@@ -1,8 +1,9 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yb.springsecurity.jwt.common.ResultInfo;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.impl.crypto.MacProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,9 +12,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 
+import javax.crypto.SecretKey;
+import javax.security.auth.DestroyFailedException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Key;
 import java.util.Date;
 import java.util.List;
 
@@ -25,9 +29,9 @@ import java.util.List;
 public class TokenAuthenticationService {
     public static final Logger log = LoggerFactory.getLogger(TokenAuthenticationService.class);
 
-    public static final long EXPIRATION_TIME = 30 * 60 * 1000;//30分钟的过期时间
     public static final String SECRET = "P@ssw0rd";//jwt秘钥
     public static final String TOKEN_PREFIX = "Bearer";//token的前缀
+    public static final long TOKEN_EXPIRATION_TIME = 30 * 60 * 1000;//60分钟的过期时间
     public static final String HEADER_SINGLE = "Authorization";//请求头Header的token的key
 
     /**
@@ -35,19 +39,23 @@ public class TokenAuthenticationService {
      */
     public static void addAuthentication(HttpServletResponse response, String username) {
         //生成JWT
+        Key key = MacProvider.generateKey();//这里是加密解密的key
+        //每个用户存储属于自己的秘钥用来加密比较好
         String jwt = Jwts.builder()
                 //保存权限(角色),该方法是往JWT添加key和对应的value
                 .claim("authorities", "admin,write")
                 //添加用户名到主题
                 .setSubject(username)
                 //有效期设置
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                //签名设置
+                .setExpiration(new Date(System.currentTimeMillis() + TOKEN_EXPIRATION_TIME))
+                //签名设置--(设置加密算法)
                 .signWith(SignatureAlgorithm.HS512, SECRET)
+                .signWith(SignatureAlgorithm.PS384, key)
+                //这个是全部设置完成后拼成jwt串的方法
                 .compact();
         //将JWT写入body
         try {
-            response.setContentType("applicaton/json");
+            response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_OK);
             response.getOutputStream().println(JSONObject.toJSONString(ResultInfo.success(jwt)));
         } catch (IOException e) {
@@ -68,7 +76,7 @@ public class TokenAuthenticationService {
             Claims claims = Jwts.parser()
                     //验证签名
                     .setSigningKey(SECRET)
-                    //取消token的头Bearer
+                    //取消token的头Bearer解析为Claims
                     .parseClaimsJws(token.replace(TOKEN_PREFIX, ""))
                     .getBody();
             //获取用户名

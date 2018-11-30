@@ -1,4 +1,4 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth;
 
 import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.exception.ParameterErrorException;
@@ -76,7 +76,7 @@ public class AntiViolenceCheck {
     }
 
     /**
-     * 清零用户登录失败的次数
+     * 清除用户登录失败的次数
      */
     public static void checkLoginTimesClear(RedisTemplate<String, Serializable> redisTemplate, String key) {
         //清零redis上的数据,最好需要删除key,不然会占用大量的redis存储空间
@@ -189,7 +189,7 @@ public class AntiViolenceCheck {
     }
 
     /**
-     * 清空取消ip禁用--登录成功需要清零禁用的次数
+     * 清除取消ip禁用--登录成功需要清零禁用的次数
      */
     public static void ipForbiddenClear(HttpServletRequest request,
                                         RedisTemplate<String, Serializable> redisTemplate) {

@@ -1,17 +1,14 @@
 package com.yb.springsecurity.jwt.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yb.springsecurity.jwt.authsecurity.AntiViolenceCheck;
-import com.yb.springsecurity.jwt.authsecurity.ApplicationRunnerImpl;
-import com.yb.springsecurity.jwt.authsecurity.CustomAuthenticationProvider;
+import com.yb.springsecurity.jwt.auth.AntiViolenceCheck;
+import com.yb.springsecurity.jwt.auth.CustomAuthenticationProvider;
 import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.common.ResultInfo;
 import com.yb.springsecurity.jwt.model.SysUser;
 import com.yb.springsecurity.jwt.request.UserRequest;
-import com.yb.springsecurity.jwt.response.Token;
+import com.yb.springsecurity.jwt.response.UserDetailsInfo;
 import com.yb.springsecurity.jwt.service.SecurityJwtService;
-import com.yb.springsecurity.jwt.service.UserDetailsServiceImpl;
-import com.yb.springsecurity.jwt.utils.PasswordEncryptUtils;
 import com.yb.springsecurity.jwt.utils.RealIpGetUtils;
 import com.yb.springsecurity.jwt.utils.VerifyCodeUtils;
 import io.swagger.annotations.Api;
@@ -21,12 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,10 +40,10 @@ import java.util.concurrent.TimeUnit;
 @Api("我的controller测试")
 @Controller
 @CrossOrigin//处理跨域
-//@RequestMapping("/security")//添加一层路径是必要的,
-//我现在只在需要放开的接口添加一层共同的路径,便于放开路径/security/login和/security/verifyCode,
+//@RequestMapping("/auth")//添加一层路径是必要的,
+//我现在只在需要放开的接口添加一层共同的路径,便于放开路径/auth/login和/auth/verifyCode,
 //这种只放开部分接口,在类上加一层路径没什么用处,你还得逐个放开,所以对于需要放开的加就可以了
-//这种方式还有一个弊端,就是因为放开的是/security/**,所以随便一个路径只要在/security下就可以直接跳过
+//这种方式还有一个弊端,就是因为放开的是/auth/**,所以随便一个路径只要在/security下就可以直接跳过
 //拦截,从而报error错误,信息会到error页面去,而不是提示用户去登录,故而感觉还是直接放开指定接口即可,
 //反正接口也不多,而且不容易因为漏掉/security而出现的各种问题.
 public class SecurityJwtController {
@@ -121,16 +115,11 @@ public class SecurityJwtController {
         }});
     }
 
-    public static void main(String[] args) {
-        String s = PasswordEncryptUtils.passwordEncoder("123");
-        System.err.println(s);
-    }
-
     @ApiOperation("前台登录")
     @PostMapping("/frontLogin")
     @ResponseBody
     public ResultInfo<JSONObject> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request) {
-        Token token = new Token();
+        UserDetailsInfo detailsInfo = new UserDetailsInfo();
         //获取用户名
         String username = userRequest.getUsername();
         //获取用户真实地址
@@ -148,7 +137,7 @@ public class SecurityJwtController {
         //判断用户是否存在
         if (sysUser != null) {
             //用户登录认证
-            token = securityJwtService.authUser(sysUser, userRequest, CommonDic.FROM_FRONT,
+            detailsInfo = securityJwtService.authUser(sysUser, userRequest, CommonDic.FROM_FRONT,
                     customAuthenticationProvider, redisTemplate);
             //成功登录后清零用户登录失败(允许次数类)的次数
             AntiViolenceCheck.checkLoginTimesClear(redisTemplate, key);
@@ -158,7 +147,7 @@ public class SecurityJwtController {
             //AntiViolenceCheck.ipForbiddenClear(request, redisTemplate);
         }
         //json化对象
-        JSONObject jsonObject = (JSONObject) JSONObject.toJSON(token);
+        JSONObject jsonObject = (JSONObject) JSONObject.toJSON(detailsInfo);
         return ResultInfo.success(jsonObject);
     }
 

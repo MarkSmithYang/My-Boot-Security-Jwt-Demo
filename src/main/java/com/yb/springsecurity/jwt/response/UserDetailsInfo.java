@@ -1,5 +1,6 @@
 package com.yb.springsecurity.jwt.response;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -20,6 +21,7 @@ public class UserDetailsInfo implements Serializable {
     @ApiModelProperty("id")
     private String id;
 
+    @JSONField(name = "aud")//json化的时候,key为aud而不再是username
     @ApiModelProperty("用户名")
     private String username;
 

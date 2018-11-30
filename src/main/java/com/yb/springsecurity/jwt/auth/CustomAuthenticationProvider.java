@@ -1,28 +1,21 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth;
 
 import com.yb.springsecurity.jwt.service.SecurityJwtService;
 import com.yb.springsecurity.jwt.service.UserDetailsServiceImpl;
-import com.yb.springsecurity.jwt.utils.PasswordEncryptUtils;
 import com.yb.springsecurity.jwt.exception.ParameterErrorException;
 import com.yb.springsecurity.jwt.model.SysUser;
 import com.yb.springsecurity.jwt.repository.SysUserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author yangbiao
@@ -38,6 +31,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private UserDetailsServiceImpl userDetailsServiceImpl;
     @Autowired
     private SecurityJwtService securityJwtService;
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     /**
      * 自定义认证的实现方法
@@ -62,7 +57,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             ParameterErrorException.message("用户名或密码错误");
         }
         //判断用户密码是否正确
-        if (!PasswordEncryptUtils.matchPassword(password, sysUser.getPassword())) {
+        if (!bCryptPasswordEncoder.matches(password, sysUser.getPassword())) {
             ParameterErrorException.message("用户名或密码错误");
         }
         //获取Security自带的详情信息(主要是用户名密码一级一些锁定账户,账户是否可用的信息)

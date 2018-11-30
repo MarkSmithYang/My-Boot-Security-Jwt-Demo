@@ -1,14 +1,13 @@
 package com.yb.springsecurity.jwt.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yb.springsecurity.jwt.authsecurity.CustomAuthenticationProvider;
-import com.yb.springsecurity.jwt.authsecurity.MyUsernamePasswordAuthenticationToken;
+import com.yb.springsecurity.jwt.auth.CustomAuthenticationProvider;
+import com.yb.springsecurity.jwt.auth.MyUsernamePasswordAuthenticationToken;
 import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.model.SysUser;
 import com.yb.springsecurity.jwt.model.UserInfo;
 import com.yb.springsecurity.jwt.repository.SysUserRepository;
 import com.yb.springsecurity.jwt.request.UserRequest;
-import com.yb.springsecurity.jwt.response.Token;
 import com.yb.springsecurity.jwt.response.UserDetailsInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -22,7 +21,6 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
@@ -46,7 +44,7 @@ public class SecurityJwtService {
     /**
      * 用户的登录认证
      */
-    public Token authUser(SysUser sysUser, UserRequest userRequest, String from,CustomAuthenticationProvider
+    public UserDetailsInfo authUser(SysUser sysUser, UserRequest userRequest, String from, CustomAuthenticationProvider
             customAuthenticationProvider, RedisTemplate<String, Serializable> redisTemplate) {
         //获取获取到的用户名和密码
         String username = userRequest.getUsername();
@@ -63,52 +61,22 @@ public class SecurityJwtService {
         //生成token字符串并存储信息到redis
         String token = UUID.randomUUID().toString().replace("-", "");
         redisTemplate.opsForHash().put(token, CommonDic.SECURITY_CONTEXT, securityContext);
+        //处理记住密码逻辑--->暂时还没理清
+        if (userRequest.isRemember()) {
+            //创建存储redis的key
+            String retoken = CommonDic.REFRESH_TOKEN + UUID.randomUUID().toString();
+            //存储信息到redis(就是延长用户这次输入的用户名密码的保存时间,下次登录在用这次输入的信息去登录)
+            redisTemplate.opsForHash().put(retoken, CommonDic.USERNAME_PASSWORD_AUTHENTICATION_TOKEN, userRequest);
+            //存储retoken字符串,方便下次获取用户登录的信息
+            redisTemplate.opsForHash().put(token, CommonDic.REFRESH_TOKEN, retoken);
+            //设置存储的过期时间(一周)
+            redisTemplate.expire(retoken, CommonDic.RETOKEN_EXPIRE, TimeUnit.MINUTES);
+        }
         //从redis获取用户详情信息
         UserDetailsInfo detailsInfo = (UserDetailsInfo) redisTemplate.opsForHash()
                 .get(sysUser.getId() + from, CommonDic.USER_DETAILS_INFO);
-        //封装用户详细信息到token对象中
-        Token tokenInfo = userToToken(redisTemplate, token, detailsInfo, sysUser, userRequest);
         //返回数据
-        return tokenInfo;
-    }
-
-    /**
-     * 封装用户详细信息到token对象中
-     */
-    public Token userToToken(RedisTemplate<String, Serializable> redisTemplate, String token,
-                             UserDetailsInfo detailsInfo, SysUser sysUser, UserRequest userRequest) {
-        //存储常用信息到redis方便取用
-        Token tokenInfo = new Token();
-        if (detailsInfo != null) {
-            //把用户详情信息转换为JSON对象
-            JSONObject jsonObject = (JSONObject) JSONObject.toJSON(detailsInfo);
-            redisTemplate.opsForHash().put(token, CommonDic.USER_DETAILS_INFO, jsonObject);
-            redisTemplate.opsForHash().put(token, CommonDic.USER_ID, detailsInfo.getId());
-            redisTemplate.opsForHash().put(token, CommonDic.USER_ROLES, detailsInfo.getRoles());
-            redisTemplate.opsForHash().put(token, CommonDic.USER_PERMISSIONS, detailsInfo.getPermissions());
-            redisTemplate.expire(token, CommonDic.TOKEN_EXPIRE, TimeUnit.MINUTES);
-            //设置token信息
-            tokenInfo.setToken(token);
-            //返回该数据前,应该把私密信息置空,例如密码
-            sysUser.setPassword(null);
-            tokenInfo.setSysUser(sysUser);
-            tokenInfo.setRoles(detailsInfo.getRoles());
-            tokenInfo.setModules(detailsInfo.getModules());
-            tokenInfo.setPermissions(detailsInfo.getPermissions());
-            //封装用户的模块信息
-            //判断用户是否使用记住密码功能
-            if (userRequest.isRemember()) {
-                //创建存储redis的key
-                String retoken = CommonDic.REFRESH_TOKEN + UUID.randomUUID().toString();
-                //存储信息到redis(就是延长用户这次输入的用户名密码的保存时间,下次登录在用这次输入的信息去登录)
-                redisTemplate.opsForHash().put(retoken, CommonDic.USERNAME_PASSWORD_AUTHENTICATION_TOKEN, userRequest);
-                //存储retoken字符串,方便下次获取用户登录的信息
-                redisTemplate.opsForHash().put(token, CommonDic.REFRESH_TOKEN, retoken);
-                //设置存储的过期时间(一周)
-                redisTemplate.expire(retoken, CommonDic.RETOKEN_EXPIRE, TimeUnit.MINUTES);
-            }
-        }
-        return tokenInfo;
+        return detailsInfo;
     }
 
     /**

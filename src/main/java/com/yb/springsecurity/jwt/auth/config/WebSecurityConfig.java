@@ -1,5 +1,10 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth.config;
 
+import com.yb.springsecurity.jwt.auth.CustomAuthenticationProvider;
+import com.yb.springsecurity.jwt.auth.JWTAuthenticationFilter;
+import com.yb.springsecurity.jwt.auth.JWTLoginFilter;
+import com.yb.springsecurity.jwt.auth.RedisSecurityContextRepository;
+import com.yb.springsecurity.jwt.auth.impl.AuthenticationEntryPointImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +15,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.Serializable;
@@ -27,7 +31,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private AuthenticationEntryPointImpl authenticationEntryPoint;
     @Autowired
-    private AccessDeniedHandlerImpl AccessDeniedHandlerImpl;
+    private com.yb.springsecurity.jwt.auth.impl.AccessDeniedHandlerImpl AccessDeniedHandlerImpl;
     @Autowired
     private RedisTemplate<String, Serializable> redisTemplate;
 
@@ -38,7 +42,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     /**
-     * 设置 HTTP 验证规则,用户模板最好在controller类上添加一层访问的路径,例如/security/**
+     * 设置 HTTP 验证规则,用户模板最好在controller类上添加一层访问的路径,例如/auth/**
      * 这样在放开登录注册等接口的时候,就不容易造成放开一些不必要的接口服务
      */
     @Override
@@ -61,12 +65,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 //对请求进行认证
                 .authorizeRequests()
                 //所有带/的请求都放行-->可以统一放到配置文件,然后读取过来,那样更方便修改特别是使用云配置的那种更方便
-                //放开登录和验证码相关的接口(建议不要加层路径例如/security,
+                //放开登录和验证码相关的接口(建议不要加层路径例如/auth,
                 //会导致/security下的其他的不想放开的接口被放开等问题,直接放确定的最好,方正也没有几个接口)
                 .antMatchers(serverUrl).permitAll()
                 .antMatchers(HttpMethod.GET,commonUrl).permitAll()
 //               //访问指定路径的ip地址校验,访问指定路径的权限校验--这些接口需要的权限可以通过注解@PreAuthorize等来设置
-//              .antMatchers("/security/yes").hasIpAddress("192.168.11.130")//这个注解目前还没发现,可以在这里设置
+//              .antMatchers("/auth/yes").hasIpAddress("192.168.11.130")//这个注解目前还没发现,可以在这里设置
                 //所有请求需要身份认证
                 .anyRequest().authenticated().and()
                 //添加一个过滤器,所有访问/login的请求都交给JWTLoginFilter来处理

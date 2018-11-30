@@ -1,4 +1,4 @@
-package com.yb.springsecurity.jwt.authsecurity;
+package com.yb.springsecurity.jwt.auth;
 
 import com.yb.springsecurity.jwt.common.CommonDic;
 import org.slf4j.Logger;
@@ -36,8 +36,6 @@ public class RedisSecurityContextRepository implements SecurityContextRepository
     @Autowired
     private final RedisTemplate<String, Serializable> redisTemplate;
 
-    public static final String SPRING_SECURITY_CONTEXT_KEY = "SPRING_SECURITY_CONTEXT";
-
     private boolean disableUrlRewriting = false;
     private boolean isServlet3 = ClassUtils.hasMethod(ServletRequest.class, "startAsync");
 
@@ -60,16 +58,13 @@ public class RedisSecurityContextRepository implements SecurityContextRepository
                         + "A new one will be created.");
             }
             context = generateNewContext();
-
         }
 
         SaveToRedisResponseWrapper wrappedResponse = new SaveToRedisResponseWrapper(response, request, context);
         requestResponseHolder.setResponse(wrappedResponse);
-
         if (isServlet3) {
             requestResponseHolder.setRequest(new Servlet3SaveToRedisRequestWrapper(request, wrappedResponse));
         }
-
         return context;
     }
 
@@ -87,18 +82,14 @@ public class RedisSecurityContextRepository implements SecurityContextRepository
             return null;
         }
 
-        // headerToken exists, so try to obtain a context from it.
-
         String headerToken = request.getHeader(headerName);
         Object obj = null;
         if (headerToken == null || headerToken.length() < 16) {
             if (debug) {
                 logger.debug("headerToken returned null object for SPRING_SECURITY_CONTEXT");
             }
-
             return null;
         } else {
-            // obj = redisTemplate.opsForValue().get(headerToken);
             obj = redisTemplate.opsForHash().get(headerToken, CommonDic.SECURITY_CONTEXT);
             if (obj == null) {
                 if (debug) {
@@ -116,35 +107,26 @@ public class RedisSecurityContextRepository implements SecurityContextRepository
                         + "(you should always use SecurityContextHolder) or using the HttpSession attribute "
                         + "reserved for this class?");
             }
-
             return null;
         }
 
         if (debug) {
             logger.debug("Obtained a valid SecurityContext from " + headerName + ": '" + obj + "'");
         }
-
         return (SecurityContext) obj;
     }
 
     @Override
     public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
-
         SaveToRedisResponseWrapper responseWrapper = WebUtils.getNativeResponse(response,
                 SaveToRedisResponseWrapper.class);
         if (responseWrapper == null) {
             throw new IllegalStateException("Cannot invoke saveContext on response " + response
                     + ". You must use the HttpRequestResponseHolder.response after invoking loadContext");
         }
-        // saveContext() might already be called by the response wrapper
-        // if something in the chain called sendError() or sendRedirect(). This
-        // ensures we
-        // only call it
-        // once per request.
         if (!responseWrapper.isContextSaved()) {
             responseWrapper.saveContext(context);
         }
-
     }
 
     @Override
@@ -180,7 +162,6 @@ public class RedisSecurityContextRepository implements SecurityContextRepository
     }
 
     final class SaveToRedisResponseWrapper extends SaveContextOnUpdateOrErrorResponseWrapper {
-
         private final HttpServletRequest request;
         private final SecurityContext contextBeforeExecution;
         private final Authentication authBeforeExecution;
@@ -214,8 +195,6 @@ public class RedisSecurityContextRepository implements SecurityContextRepository
             if (token != null) {
                 if (contextChanged(context)
                         || redisTemplate.opsForHash().get(token, CommonDic.SECURITY_CONTEXT) == null) {
-                    // redisTemplate.opsForValue().set(token, context, 30,
-                    // TimeUnit.MINUTES);
                     redisTemplate.opsForHash().put(token, CommonDic.SECURITY_CONTEXT, context);
                     if (logger.isDebugEnabled()) {
                         logger.debug("SecurityContext '" + context + "' stored to Redis: '" + token);

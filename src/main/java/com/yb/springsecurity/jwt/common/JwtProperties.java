@@ -12,20 +12,20 @@ import org.springframework.context.annotation.Configuration;
  */
 @ApiModel("jwt的信息封装类")
 @Configuration
-@ConfigurationProperties(prefix = "jwt.audience")
-public class JwtAudience {
+@ConfigurationProperties(prefix = "jwt")
+public class JwtProperties {
 
     @ApiModelProperty("授权者")
     private String iss;
 
-    @ApiModelProperty("鉴权者")
+    @ApiModelProperty("观众,受众")
     private String aud;
 
     @ApiModelProperty("经过base64编码的秘钥")
-    private String base64Secret;
+    private String secret;
 
     @ApiModelProperty("token的过期时间")
-    private int expirationSeconds;
+    private int expireSeconds;
 
     public String getIss() {
         return iss;
@@ -43,19 +43,19 @@ public class JwtAudience {
         this.aud = aud;
     }
 
-    public String getBase64Secret() {
-        return base64Secret;
+    public String getSecret() {
+        return secret;
     }
 
-    public void setBase64Secret(String base64Secret) {
-        this.base64Secret = base64Secret;
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 
-    public int getExpirationSeconds() {
-        return expirationSeconds;
+    public int getExpireSeconds() {
+        return expireSeconds;
     }
 
-    public void setExpirationSeconds(int expirationSeconds) {
-        this.expirationSeconds = expirationSeconds;
+    public void setExpireSeconds(int expireSeconds) {
+        this.expireSeconds = expireSeconds;
     }
 }

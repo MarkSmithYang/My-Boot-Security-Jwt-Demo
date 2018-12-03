@@ -1,13 +1,10 @@
 package com.yb.springsecurity.jwt.controller;
 
-import com.alibaba.fastjson.JSONObject;
-import com.yb.springsecurity.jwt.auth.AntiViolenceCheck;
-import com.yb.springsecurity.jwt.auth.CustomAuthenticationProvider;
+import com.yb.springsecurity.jwt.auth.tools.AntiViolenceCheckTools;
 import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.common.ResultInfo;
-import com.yb.springsecurity.jwt.model.SysUser;
 import com.yb.springsecurity.jwt.request.UserRequest;
-import com.yb.springsecurity.jwt.response.UserDetailsInfo;
+import com.yb.springsecurity.jwt.response.JwtToken;
 import com.yb.springsecurity.jwt.service.SecurityJwtService;
 import com.yb.springsecurity.jwt.utils.RealIpGetUtils;
 import com.yb.springsecurity.jwt.utils.VerifyCodeUtils;
@@ -22,7 +19,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
@@ -53,8 +49,6 @@ public class SecurityJwtController {
     private SecurityJwtService securityJwtService;
     @Autowired
     private RedisTemplate<String, Serializable> redisTemplate;
-    @Autowired
-    private CustomAuthenticationProvider customAuthenticationProvider;
 
     @GetMapping("/toLogin")
     public String toLogin() {
@@ -118,8 +112,8 @@ public class SecurityJwtController {
     @ApiOperation("前台登录")
     @PostMapping("/frontLogin")
     @ResponseBody
-    public ResultInfo<JSONObject> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request) {
-        UserDetailsInfo detailsInfo = new UserDetailsInfo();
+    public ResultInfo<JwtToken> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
+                                             HttpServletResponse response) {
         //获取用户名
         String username = userRequest.getUsername();
         //获取用户真实地址
@@ -127,28 +121,23 @@ public class SecurityJwtController {
         //拼接存储key用以存储信息到redis
         String key = CommonDic.LOGIN_SIGN_PRE + ipAddress + username;
         //检测用户登录次数是否超过指定次数,超过就不再往下验证用户信息
-        AntiViolenceCheck.checkLoginTimes(redisTemplate, key);
+        AntiViolenceCheckTools.checkLoginTimes(redisTemplate, key);
         //检测用户名登录失败次数--->根据自己的需求添加我这里就用一个,其他的注释
-        //AntiViolenceCheck.usernameOneDayForbidden(redisTemplate, username);
+        //AntiViolenceCheckTools.usernameOneDayForbidden(redisTemplate, username);
         //检测登录用户再次ip的登录失败的次数
-        //AntiViolenceCheck.ipForbidden(request,redisTemplate);
-        //根据用户输入的用户名获取用户信息
-        SysUser sysUser = securityJwtService.findByUsername(username);
-        //判断用户是否存在
-        if (sysUser != null) {
-            //用户登录认证
-            detailsInfo = securityJwtService.authUser(sysUser, userRequest, CommonDic.FROM_FRONT,
-                    customAuthenticationProvider, redisTemplate);
-            //成功登录后清零用户登录失败(允许次数类)的次数
-            AntiViolenceCheck.checkLoginTimesClear(redisTemplate, key);
-            //成功登录后清零此用户名登录失败的次数
-            //AntiViolenceCheck.usernameOneDayClear(redisTemplate, username);
-            //成功登录后清零此ip登录失败的次数
-            //AntiViolenceCheck.ipForbiddenClear(request, redisTemplate);
-        }
-        //json化对象
-        JSONObject jsonObject = (JSONObject) JSONObject.toJSON(detailsInfo);
-        return ResultInfo.success(jsonObject);
+        //AntiViolenceCheckTools.ipForbidden(request,redisTemplate);
+        //进行用户登录认证
+        String accessToken = securityJwtService.authUser(userRequest, CommonDic.FROM_FRONT, response);
+        //成功登录后清除用户登录失败(允许次数类)的次数
+        AntiViolenceCheckTools.checkLoginTimesClear(redisTemplate, key);
+        //成功登录后清零此用户名登录失败的次数
+        //AntiViolenceCheckTools.usernameOneDayClear(redisTemplate, username);
+        //成功登录后清零此ip登录失败的次数
+        //AntiViolenceCheckTools.ipForbiddenClear(request, redisTemplate);
+        JwtToken jwtToken = new JwtToken();
+        jwtToken.setAccessToken(accessToken);
+        //返回数据
+        return ResultInfo.success(jwtToken);
     }
 
     //--------------------------------------------------------------------------------------------------------

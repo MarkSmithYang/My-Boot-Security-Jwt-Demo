@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Description:用户信息展示给前端的封装类
@@ -37,7 +38,7 @@ public class UserDetailsInfo implements Serializable {
     @ApiModelProperty("用户职位")
     private String position;
 
-    @ApiModelProperty("用户职位")
+    @ApiModelProperty("用户电话")
     private String phone;
 
     @ApiModelProperty("用户权限")
@@ -128,4 +129,5 @@ public class UserDetailsInfo implements Serializable {
     public void setModules(Set<String> modules) {
         this.modules = modules;
     }
+
 }

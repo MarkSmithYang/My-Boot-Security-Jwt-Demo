@@ -1,4 +1,4 @@
-package com.yb.springsecurity.jwt.auth;
+package com.yb.springsecurity.jwt.auth.tools;
 
 import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.exception.ParameterErrorException;
@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
  * author yangbiao
  * date 2018/11/30
  */
-public class AntiViolenceCheck {
-    public static final Logger log = LoggerFactory.getLogger(AntiViolenceCheck.class);
+public class AntiViolenceCheckTools {
+    public static final Logger log = LoggerFactory.getLogger(AntiViolenceCheckTools.class);
     //要用的静态常量设置
     private static final long FIFTEEN_MINUTES = 15;//分钟
     private static final long ONE_DAY_MINUTES = 24 * 60;//分钟
@@ -134,7 +134,7 @@ public class AntiViolenceCheck {
     public static synchronized void usernameOneDayForbidden(RedisTemplate<String, Serializable> redisTemplate,
                                                             String username) {
         //拼接redis的key
-        String key = AntiViolenceCheck.class.getName() +
+        String key = AntiViolenceCheckTools.class.getName() +
                 CommonDic._USERNAME_ONE_DAY_FORBIDDEN_ + username;
         //获取登录的
         Integer times = (Integer) redisTemplate.opsForValue().get(key);
@@ -156,7 +156,7 @@ public class AntiViolenceCheck {
     public static synchronized void usernameOneDayClear(RedisTemplate<String, Serializable> redisTemplate,
                                                         String username) {
         //拼接key
-        String key = AntiViolenceCheck.class.getName() + CommonDic._USERNAME_ONE_DAY_FORBIDDEN_ + username;
+        String key = AntiViolenceCheckTools.class.getName() + CommonDic._USERNAME_ONE_DAY_FORBIDDEN_ + username;
         //把改用户名登录失败的次数清零,最好需要删除key,不然会占用大量的redis存储空间
         Integer times = (Integer) redisTemplate.opsForValue().get(key);
         if (times != null) {
@@ -170,7 +170,7 @@ public class AntiViolenceCheck {
     public static void ipForbidden(HttpServletRequest request, RedisTemplate<String, Serializable> redisTemplate) {
         //获取ip并拼接key
         String ip = RealIpGetUtils.getIpAddress(request);
-        String key = AntiViolenceCheck.class.getName() + CommonDic._IP_FORBIDDEN_ + ip;
+        String key = AntiViolenceCheckTools.class.getName() + CommonDic._IP_FORBIDDEN_ + ip;
         //获取用户登录次数
         Integer times = (Integer) redisTemplate.opsForValue().get(key);
         if (times == null) {
@@ -195,7 +195,7 @@ public class AntiViolenceCheck {
                                         RedisTemplate<String, Serializable> redisTemplate) {
         //获取ip并拼接key
         String ip = RealIpGetUtils.getIpAddress(request);
-        String key = AntiViolenceCheck.class.getName() + CommonDic._IP_FORBIDDEN_ + ip;
+        String key = AntiViolenceCheckTools.class.getName() + CommonDic._IP_FORBIDDEN_ + ip;
         //清零redis上的数据,最好需要删除key,不然会占用大量的redis存储空间
         Integer times = (Integer) redisTemplate.opsForValue().get(key);
         if (times != null) {

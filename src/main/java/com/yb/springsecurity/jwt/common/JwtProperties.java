@@ -15,16 +15,16 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "jwt")
 public class JwtProperties {
 
-    @ApiModelProperty("授权者")
+    @ApiModelProperty("jwt发布者")
     private String iss;
 
-    @ApiModelProperty("观众,受众")
+    @ApiModelProperty("jwt接收方")
     private String aud;
 
-    @ApiModelProperty("经过base64编码的秘钥")
+    @ApiModelProperty("签名秘钥")
     private String secret;
 
-    @ApiModelProperty("token的过期时间")
+    @ApiModelProperty("过期时间-毫秒")
     private int expireSeconds;
 
     public String getIss() {

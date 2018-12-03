@@ -32,8 +32,13 @@ public class CommonDic {
     public static final String LOGIN_TIMES_PRE = "LOGIN_TIMES_PRE";
     //用户详情信息封装类
     public static final String USER_DETAILS_INFO = "USER_DETAILS_INFO";
-    public static final String USER_ID = "USER_ID";
-    public static final String USER_ROLES = "USER_ROLES";
-    public static final String USER_PERMISSIONS = "USER_PERMISSIONS";
+    //记住我秒数
+    public static final int REMEMBER_ME_TIME = 7 * 24 * 60 * 60;
+    //jwt唯一标识jti的存储key
+    public static final String USER_JWT_JTI = "USER_JWT_JTI";
+    //token的前缀
+    public static final String TOKEN_PREFIX = "Bearer ";
+    //请求头Header的token的key
+    public static final String HEADER_SINGLE = "Authorization";
 
 }

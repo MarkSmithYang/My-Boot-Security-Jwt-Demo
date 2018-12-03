@@ -1,5 +1,8 @@
 package com.yb.springsecurity.jwt.auth;
 
+import com.alibaba.fastjson.JSONObject;
+import com.yb.springsecurity.jwt.auth.tools.JwtTokenTools;
+import com.yb.springsecurity.jwt.response.UserDetailsInfo;
 import com.yb.springsecurity.jwt.service.SecurityJwtService;
 import com.yb.springsecurity.jwt.service.UserDetailsServiceImpl;
 import com.yb.springsecurity.jwt.exception.ParameterErrorException;
@@ -16,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * @author yangbiao
@@ -31,46 +35,22 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private UserDetailsServiceImpl userDetailsServiceImpl;
     @Autowired
     private SecurityJwtService securityJwtService;
-    @Autowired
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
+
 
     /**
      * 自定义认证的实现方法
      */
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        //获取需要认证的用户名
-        String username = (String) authentication.getPrincipal();
-        //获取需要认证的密码
-        String password = authentication.getCredentials().toString();
-        //获取from
-        String from = null;
-        //判断参数是否属于自定义的token,是则强转获取from
-        //(因为是用这个new MyUsernamePasswordAuthenticationToken传递进来的,其实不用判断所属也可以直接强转的)
-        if (authentication instanceof MyUsernamePasswordAuthenticationToken) {
-            from = ((MyUsernamePasswordAuthenticationToken) authentication).getFrom();
-        }
-        //进行自定义的逻辑认证--(如果用户名可能是电话号码,邮箱地址,用户名,这个需要逐个去查询判断)
-        SysUser sysUser = sysUserRepository.findByUsername(username);
-        //判断用户名是否正确
-        if (sysUser == null) {
-            ParameterErrorException.message("用户名或密码错误");
-        }
-        //判断用户密码是否正确
-        if (!bCryptPasswordEncoder.matches(password, sysUser.getPassword())) {
-            ParameterErrorException.message("用户名或密码错误");
-        }
+        //把对象转换为json字符串,传递到loadUserByUsername里进行处理,这样可以减少查询用户的次数
+        String str = JSONObject.toJSON(authentication).toString();
         //获取Security自带的详情信息(主要是用户名密码一级一些锁定账户,账户是否可用的信息)
-        UserDetails userDetails = userDetailsServiceImpl.loadUserById(sysUser.getId());
-        //获取权限信息-->一般来说不去获取UserDetails也没有什么问题,除非想用一些类似于锁定账户等功能的时候
-        Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
-        //构造token对象
+        UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(authentication.toString());
+        //构造token对象--因为在那边已经sysUser会抛出异常,所以正常返回的都是能构造成功的,所以UserDetails不会为空
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                userDetails.getUsername(), null, authorities);
+                userDetails.getUsername(), userDetails.getPassword(), userDetails.getAuthorities());
         //设置用户详情信息
         token.setDetails(userDetails);
-        //把相关的用户详情信息(角色权限部门电话等等信息)封装并存入redis里(from作为拼接的字符串)
-        securityJwtService.setUserDetailsInfo(sysUser, from);
         //返回令牌信息
         return token;
     }
@@ -78,6 +58,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> aClass) {
         //是否可以提供输入类型的认证服务
-        return false;
+        return aClass.equals(UsernamePasswordAuthenticationToken.class);
     }
+
+
 }

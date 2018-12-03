@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.Length;
+
 import javax.validation.constraints.NotBlank;
 
 /**
@@ -34,7 +35,7 @@ public class UserRequest {
      * 是否记住密码
      */
     @ApiModelProperty("是否记住密码")
-    private boolean isRemember = false;
+    private boolean rememberMe = false;
 
     public String getUsername() {
         return username;
@@ -56,11 +57,11 @@ public class UserRequest {
         }
     }
 
-    public boolean isRemember() {
-        return isRemember;
+    public boolean isRememberMe() {
+        return rememberMe;
     }
 
-    public void setRemember(boolean remember) {
-        isRemember = remember;
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 }

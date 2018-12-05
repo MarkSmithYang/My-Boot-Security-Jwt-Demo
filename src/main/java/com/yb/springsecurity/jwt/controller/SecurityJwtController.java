@@ -1,15 +1,22 @@
 package com.yb.springsecurity.jwt.controller;
 
 import com.yb.springsecurity.jwt.auth.tools.AntiViolenceCheckTools;
+import com.yb.springsecurity.jwt.auth.tools.JwtTokenTools;
+import com.yb.springsecurity.jwt.common.CaptchaParam;
 import com.yb.springsecurity.jwt.common.CommonDic;
+import com.yb.springsecurity.jwt.common.JwtProperties;
 import com.yb.springsecurity.jwt.common.ResultInfo;
+import com.yb.springsecurity.jwt.request.RefreshToken;
 import com.yb.springsecurity.jwt.request.UserRequest;
 import com.yb.springsecurity.jwt.response.JwtToken;
+import com.yb.springsecurity.jwt.response.UserDetailsInfo;
 import com.yb.springsecurity.jwt.service.SecurityJwtService;
 import com.yb.springsecurity.jwt.utils.RealIpGetUtils;
 import com.yb.springsecurity.jwt.utils.VerifyCodeUtils;
+import io.jsonwebtoken.Claims;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +24,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,16 +57,22 @@ public class SecurityJwtController {
     public static final Logger log = LoggerFactory.getLogger(SecurityJwtController.class);
 
     @Autowired
+    private JwtProperties jwtProperties;
+    @Autowired
     private SecurityJwtService securityJwtService;
     @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Autowired
     private RedisTemplate<String, Serializable> redisTemplate;
+
+    private final String CODE_HEADER = "ae81cac2";
+
 
     @GetMapping("/toLogin")
     public String toLogin() {
         return "/login";
     }
 
-    @PreAuthorize("hasAuthority('admin,manager')")//和hasRole功能一样
     @GetMapping("/logout")
     public String logout() {
         //清空用户的登录
@@ -65,7 +82,7 @@ public class SecurityJwtController {
 
     //@Secured("admin,manager")//不支持Spring EL表达式
     //@PostAuthorize("hasAuthority('')")//方法调用之后执行认证
-    @PreAuthorize("hasAuthority('read')")
+    @PreAuthorize("hasAuthority('query')")
     @ApiOperation("yes的查询")
     @GetMapping("/yes")
     @ResponseBody
@@ -75,7 +92,7 @@ public class SecurityJwtController {
         }});
     }
 
-    @PreAuthorize("hasPermission('write')")
+    @PreAuthorize("hasPermission('update')")
     @ApiOperation("hello的查询")
     @GetMapping("/hello")
     @ResponseBody
@@ -85,7 +102,7 @@ public class SecurityJwtController {
         }});
     }
 
-    @PreAuthorize("hasAnyRole('admin,manager')")
+    @PreAuthorize("hasAuthority('"+CommonDic.ROLES_+"admin,manager')")//和hasRole功能一样
     @ApiOperation("world的查询")
     @GetMapping("/world")
     @ResponseBody
@@ -97,7 +114,7 @@ public class SecurityJwtController {
 
     //@Secured("admin,manager")//不支持Spring EL表达式
     //@PostAuthorize("hasAuthority('')")//方法调用之后执行认证
-    @PreAuthorize("hasAuthority('')")//方法执行之前执行认证
+    @PreAuthorize("hasAuthority('"+CommonDic.MODULES_+"center')")//方法执行之前执行认证
     @ApiOperation("users的查询")
     @GetMapping("/users")
     @ResponseBody
@@ -109,11 +126,53 @@ public class SecurityJwtController {
         }});
     }
 
+    @ApiOperation(value = "获取图片验证码")
+    @GetMapping("captcha")
+    @ResponseBody
+    public ResultInfo<CaptchaParam> captcha(@ApiParam("宽度") @RequestParam(defaultValue = "110") int width, @ApiParam("高度") @RequestParam(defaultValue = "34") int height) throws IOException {
+        String code = VerifyCodeUtils.generateVerifyCode(4);
+        String base64img = VerifyCodeUtils.base64Image(width, height, code);
+        String signature = bCryptPasswordEncoder.encode(CODE_HEADER + code.toUpperCase());
+        CaptchaParam data = new CaptchaParam(base64img, signature);
+        return ResultInfo.success(data);
+    }
+
+    @ApiOperation(value = "校验验证码")
+    @PostMapping("checkCaptcha")
+    @ResponseBody
+    public ResultInfo<String> checkCaptcha(@Valid @RequestBody CaptchaParam param) {
+        if (bCryptPasswordEncoder.matches(CODE_HEADER + param.getCaptcha().toUpperCase(), param.getSignature())) {
+            return ResultInfo.success("验证码正确");
+        }
+        return ResultInfo.error("验证码错误");
+    }
+
+    @ApiOperation("刷新token")
+    @PostMapping("/refreshToken")
+    @ResponseBody
+    public ResultInfo<JwtToken> refreshToken(@Valid @RequestBody RefreshToken refreshToken, HttpServletResponse response) {
+        //判断token的合法性并解析出用户详细信息
+        UserDetailsInfo detailsInfo = JwtTokenTools.getUserByJwt(refreshToken.getAccessToken(), jwtProperties);
+        //生成token信息
+        String accessToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds(), response, jwtProperties);
+        //封装token返回
+        if (StringUtils.isNotBlank(accessToken)) {
+            JwtToken jwtToken = new JwtToken();
+            jwtToken.setAccessToken(CommonDic.TOKEN_PREFIX + accessToken);
+            jwtToken.setRefreshToken(CommonDic.TOKEN_PREFIX + refreshToken);
+            jwtToken.setTokenExpire(jwtProperties.getExpireSeconds());
+            //返回数据
+            return ResultInfo.success(jwtToken);
+        }
+        return ResultInfo.error("刷新token失败");
+
+    }
+
     @ApiOperation("前台登录")
     @PostMapping("/frontLogin")
     @ResponseBody
     public ResultInfo<JwtToken> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
-                                             HttpServletResponse response) {
+                                           HttpServletResponse response) {
         //获取用户名
         String username = userRequest.getUsername();
         //获取用户真实地址
@@ -121,21 +180,19 @@ public class SecurityJwtController {
         //拼接存储key用以存储信息到redis
         String key = CommonDic.LOGIN_SIGN_PRE + ipAddress + username;
         //检测用户登录次数是否超过指定次数,超过就不再往下验证用户信息
-        AntiViolenceCheckTools.checkLoginTimes(redisTemplate, key);
+        //AntiViolenceCheckTools.checkLoginTimes(redisTemplate, key);
         //检测用户名登录失败次数--->根据自己的需求添加我这里就用一个,其他的注释
         //AntiViolenceCheckTools.usernameOneDayForbidden(redisTemplate, username);
         //检测登录用户再次ip的登录失败的次数
         //AntiViolenceCheckTools.ipForbidden(request,redisTemplate);
         //进行用户登录认证
-        String accessToken = securityJwtService.authUser(userRequest, CommonDic.FROM_FRONT, response);
+        JwtToken jwtToken = securityJwtService.authUser(userRequest, CommonDic.FROM_FRONT, response, request);
         //成功登录后清除用户登录失败(允许次数类)的次数
         AntiViolenceCheckTools.checkLoginTimesClear(redisTemplate, key);
         //成功登录后清零此用户名登录失败的次数
         //AntiViolenceCheckTools.usernameOneDayClear(redisTemplate, username);
         //成功登录后清零此ip登录失败的次数
         //AntiViolenceCheckTools.ipForbiddenClear(request, redisTemplate);
-        JwtToken jwtToken = new JwtToken();
-        jwtToken.setAccessToken(accessToken);
         //返回数据
         return ResultInfo.success(jwtToken);
     }

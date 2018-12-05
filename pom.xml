@@ -76,6 +76,12 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.8.1</version>
         </dependency>
+        <!--里面有个BeanUtils,可以把Map转为对象,当然了key需要和对象类保持一致-->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.3</version>
+        </dependency>
         <!-- spring推荐的加解密工具的依赖 -->
         <dependency>
             <groupId>org.springframework.security</groupId>

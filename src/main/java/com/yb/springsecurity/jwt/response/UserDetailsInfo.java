@@ -1,14 +1,14 @@
 package com.yb.springsecurity.jwt.response;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Description:用户信息展示给前端的封装类
@@ -22,7 +22,6 @@ public class UserDetailsInfo implements Serializable {
     @ApiModelProperty("id")
     private String id;
 
-    @JSONField(name = "aud")//json化的时候,key为aud而不再是username
     @ApiModelProperty("用户名")
     private String username;
 
@@ -41,6 +40,12 @@ public class UserDetailsInfo implements Serializable {
     @ApiModelProperty("用户电话")
     private String phone;
 
+    @ApiModelProperty("用户IP")
+    private String ip;
+
+    @ApiModelProperty("用户来源(前台或后台等)")
+    private String from;
+
     @ApiModelProperty("用户权限")
     private Set<String> permissions = new HashSet<>();
 
@@ -49,6 +54,24 @@ public class UserDetailsInfo implements Serializable {
 
     @ApiModelProperty("用户的模块(菜单)信息")
     private Set<String> modules = new HashSet<>();
+
+    @Override
+    public String toString() {
+        return "UserDetailsInfo{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", headUrl='" + headUrl + '\'' +
+                ", createTime=" + createTime +
+                ", department='" + department + '\'' +
+                ", position='" + position + '\'' +
+                ", phone='" + phone + '\'' +
+                ", ip='" + ip + '\'' +
+                ", from='" + from + '\'' +
+                ", permissions=" + permissions +
+                ", roles=" + roles +
+                ", modules=" + modules +
+                '}';
+    }
 
     public String getId() {
         return id;
@@ -106,6 +129,22 @@ public class UserDetailsInfo implements Serializable {
         this.phone = phone;
     }
 
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public void setFrom(String from) {
+        this.from = from;
+    }
+
     public Set<String> getPermissions() {
         return permissions;
     }
@@ -129,5 +168,4 @@ public class UserDetailsInfo implements Serializable {
     public void setModules(Set<String> modules) {
         this.modules = modules;
     }
-
 }

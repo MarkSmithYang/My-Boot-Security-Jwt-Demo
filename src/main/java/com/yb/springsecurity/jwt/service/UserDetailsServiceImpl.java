@@ -1,7 +1,8 @@
 package com.yb.springsecurity.jwt.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yb.springsecurity.jwt.auth.MyUsernamePasswordAuthenticationToken;
+import com.yb.springsecurity.jwt.auth.other.MyUsernamePasswordAuthenticationToken;
+import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.exception.ParameterErrorException;
 import com.yb.springsecurity.jwt.model.Module;
 import com.yb.springsecurity.jwt.model.Permission;
@@ -22,10 +23,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Description:UserDetailsService接口的实现类
@@ -43,8 +42,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String auth) throws UsernameNotFoundException {
-        //解析json字符串
-        Authentication authentication = JSONObject.parseObject(auth, Authentication.class);
+        //解析json字符串,注意通过指定Authentication类型解析出来的数据会丢失,用自己封装时的那个类,如下
+        Authentication authentication = JSONObject.parseObject(auth, MyUsernamePasswordAuthenticationToken.class);
         //获取需要认证的用户名
         String username = (String) authentication.getPrincipal();
         //获取需要认证的密码
@@ -55,6 +54,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         SysUser sysUser = sysUserRepository.findByUsernameAndFrom(username, from);
         //判断用户名是否正确
         if (sysUser == null) {
+            log.info("账号可能跟对应的from不一致");
             ParameterErrorException.message("用户名或密码错误");
         }
         //判断用户密码是否正确
@@ -68,9 +68,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             //一般不会为空,因为前面都能查询到(除非数据库在期间被动过或现在的查询异常了)
             return null;
         }
-        //实例化一个装权限的集合类型为GranteAuthority-->因为判断的时候是通过这个权限来判断的,
-        // 所以当你不添加角色和模块名去构造对象,就相当于找不到匹配的角色或模块了
-        List<GrantedAuthority> authorities = new ArrayList<>();
+        //获取用户的角色权限模块等信息
+        Set<GrantedAuthority> authorities = new HashSet<>();
         //获取用户权限
         Set<Permission> permissions = sysUser.getPermissions();
         //遍历获取权限添加到authorities
@@ -86,7 +85,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (CollectionUtils.isNotEmpty(roles)) {
             roles.forEach(s -> {
                 //封装角色
-                authorities.add(new SimpleGrantedAuthority(s.getRole()));
+                authorities.add(new SimpleGrantedAuthority(CommonDic.ROLES_+s.getRole()));
                 //封装角色权限
                 if (CollectionUtils.isNotEmpty(s.getPermissions())) {
                     //我这里没有写实现类来封装直接用了lambda表达式做的实现-->我这类没有用对象的id,
@@ -102,7 +101,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (CollectionUtils.isNotEmpty(modules)) {
             modules.forEach(s -> {
                 //添加模块到authorities
-                authorities.add(new SimpleGrantedAuthority(s.getModule()));
+                authorities.add(new SimpleGrantedAuthority(CommonDic.MODULES_+s.getModule()));
                 //添加模块权限到auhorities
                 if (CollectionUtils.isNotEmpty(s.getPermissions())) {
                     s.getPermissions().forEach(a -> {

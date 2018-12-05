@@ -1,26 +1,27 @@
-package com.yb.springsecurity.jwt.response;
+package com.yb.springsecurity.jwt.request;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
+import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
- * Description:登录成功返回的数据封装类
- * author yangbiao
- * date 2018/11/30
+  * Description: 刷新token传递的token封装
+  * author yangbiao
+  * date 2018/12/4
  */
-@ApiModel("登录成功返回的数据封装类")
-public class JwtToken implements Serializable {
-    private static final long serialVersionUID = -5679643008444921620L;
+@ApiModel("刷新token参数封装类")
+public class RefreshToken implements Serializable {
+    private static final long serialVersionUID = 436863891776697851L;
 
+    @NotBlank(message = "访问用token不能为空")
     @ApiModelProperty("访问用token")
     public String accessToken;
 
+    @NotBlank(message = "刷新用token不能为空")
     @ApiModelProperty("刷新用token")
     public String refreshToken;
-
-    @ApiModelProperty("token过期时间")
-    public int tokenExpire;
 
     public String getAccessToken() {
         return accessToken;
@@ -36,13 +37,5 @@ public class JwtToken implements Serializable {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
-    }
-
-    public int getTokenExpire() {
-        return tokenExpire;
-    }
-
-    public void setTokenExpire(int tokenExpire) {
-        this.tokenExpire = tokenExpire;
     }
 }

@@ -1,33 +1,32 @@
 package com.yb.springsecurity.jwt.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yb.springsecurity.jwt.auth.CustomAuthenticationProvider;
-import com.yb.springsecurity.jwt.auth.MyUsernamePasswordAuthenticationToken;
+import com.yb.springsecurity.jwt.auth.other.CustomAuthenticationProvider;
+import com.yb.springsecurity.jwt.auth.other.MyUsernamePasswordAuthenticationToken;
 import com.yb.springsecurity.jwt.auth.tools.JwtTokenTools;
 import com.yb.springsecurity.jwt.common.CommonDic;
+import com.yb.springsecurity.jwt.common.JwtProperties;
 import com.yb.springsecurity.jwt.exception.ParameterErrorException;
 import com.yb.springsecurity.jwt.model.SysUser;
 import com.yb.springsecurity.jwt.model.UserInfo;
 import com.yb.springsecurity.jwt.repository.SysUserRepository;
 import com.yb.springsecurity.jwt.request.UserRequest;
+import com.yb.springsecurity.jwt.response.JwtToken;
 import com.yb.springsecurity.jwt.response.UserDetailsInfo;
+import com.yb.springsecurity.jwt.utils.LoginUserUtils;
+import com.yb.springsecurity.jwt.utils.RealIpGetUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Description:服务层代码
@@ -41,16 +40,15 @@ public class SecurityJwtService {
     @Autowired
     private SysUserRepository sysUserRepository;
     @Autowired
-    private JwtTokenTools jwtTokenTools;
-    @Autowired
-    private RedisTemplate<String, Serializable> redisTemplate;
+    private JwtProperties jwtProperties;
     @Autowired
     private CustomAuthenticationProvider customAuthenticationProvider;
 
     /**
      * 用户的登录认证
      */
-    public String  authUser(UserRequest userRequest, String from, HttpServletResponse response) {
+    public JwtToken authUser(UserRequest userRequest, String from, HttpServletResponse response,
+                             HttpServletRequest request) {
         //获取获取到的用户名和密码
         String username = userRequest.getUsername();
         String password = userRequest.getPassword();
@@ -58,27 +56,38 @@ public class SecurityJwtService {
         UsernamePasswordAuthenticationToken userToken = new MyUsernamePasswordAuthenticationToken(username, password, from);
         //调用自定义的用户认证Provider认证用户---(可以不使用自定义的这个认证,直接在过滤器那里处理--个人觉得)
         Authentication authenticate = customAuthenticationProvider.authenticate(userToken);
-        //把认证信息存储安全上下文
-        SecurityContextHolder.getContext().setAuthentication(authenticate);
         //获取并解析封装在Authentication里的sysUser信息
         SysUser sysUser = JSONObject.parseObject((String) authenticate.getCredentials(), SysUser.class);
+        //把认证信息存储安全上下文--(把密码等敏感信息置为null)
+        authenticate = new UsernamePasswordAuthenticationToken(authenticate.getPrincipal(),
+                null, authenticate.getAuthorities());
+        //把构造的没有密码的信息放进安全上下文
+        SecurityContextHolder.getContext().setAuthentication(authenticate);
         //封装sysUser到UserDetailsInfo
-        if(sysUser==null){
+        if (sysUser == null) {
             log.info("sysUser通过密码参数传递过来解析出来为空");
             ParameterErrorException.message("用户名或密码错误");
         }
         //封装数据
-        UserDetailsInfo detailsInfo = setUserDetailsInfo(sysUser);
-        //把用户详细信息写入到jwt中
-        String accessToken = jwtTokenTools.createAccessToken(detailsInfo, response);
+        UserDetailsInfo detailsInfo = setUserDetailsInfo(sysUser, request);
+        //生成token
+        String accessToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds(), response,jwtProperties);
+        String refreshToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds() * 7, response,jwtProperties);
+        //封装token返回
+        JwtToken jwtToken = new JwtToken();
+        jwtToken.setAccessToken(CommonDic.TOKEN_PREFIX + accessToken);
+        jwtToken.setRefreshToken(CommonDic.TOKEN_PREFIX + refreshToken);
+        jwtToken.setTokenExpire(jwtProperties.getExpireSeconds());
+        //填充数据到LoginUserUtils,供其他的子线程共享信息
+        LoginUserUtils.setUserDetailsInfo(detailsInfo);
         //返回数据
-        return accessToken;
+        return jwtToken;
     }
 
     /**
      * 封装用户详情信息(角色权限部门电话等等信息)封装并存入redis里(from作为拼接的字符串)
      */
-    public UserDetailsInfo setUserDetailsInfo(SysUser sysUser) {
+    public UserDetailsInfo setUserDetailsInfo(SysUser sysUser, HttpServletRequest request) {
         //实例化封装用户信息的类
         UserDetailsInfo detailsInfo = new UserDetailsInfo();
         //获取用户基本详细信息
@@ -91,11 +100,15 @@ public class SecurityJwtService {
         } else {
             log.info("用户的基本详细信息UserInfo信息为空");
         }
+        //获取用户ip信息
+        String ipAddress = RealIpGetUtils.getIpAddress(request);
         //封装用户基础信息
         detailsInfo.setId(sysUser.getId());
         detailsInfo.setCreateTime(sysUser.getCreateTime());
         detailsInfo.setHeadUrl(sysUser.getHeadUrl());
         detailsInfo.setUsername(sysUser.getUsername());
+        detailsInfo.setIp(ipAddress);
+        detailsInfo.setFrom(sysUser.getFrom());
         //获取权限角色的集合
         Set<String> permissions = detailsInfo.getPermissions();
         Set<String> roles = detailsInfo.getRoles();
@@ -127,16 +140,7 @@ public class SecurityJwtService {
             });
         }
         return detailsInfo;
-        //把用户详细信息存储到redis上
-//        redisTemplate.opsForHash().put(sysUser.getId() + sysUser.getFrom(), CommonDic.USER_DETAILS_INFO, detailsInfo);
     }
     //-------------------------------------------------------------------------------------------------------
 
-    /**
-     * 通过用户名和用户来源获取用户信息
-     */
-    public SysUser findByUsernameAndFrom(String username, String from) {
-        SysUser sysUser = sysUserRepository.findByUsernameAndFrom(username, from);
-        return sysUser;
-    }
 }

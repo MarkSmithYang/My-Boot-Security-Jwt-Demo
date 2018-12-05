@@ -2,6 +2,7 @@ package com.yb.springsecurity.jwt.auth.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.yb.springsecurity.jwt.common.ResultInfo;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -19,10 +20,10 @@ import java.io.IOException;
 public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
-            throws IOException {
-        response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setStatus(401);
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException {
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Content-Type", "application/json;charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         ResultInfo info = ResultInfo.status(HttpServletResponse.SC_UNAUTHORIZED).message("请登录");
         response.getOutputStream().write(JSONObject.toJSON(info).toString().getBytes());
     }

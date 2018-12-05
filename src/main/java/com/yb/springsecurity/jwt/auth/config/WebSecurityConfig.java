@@ -1,15 +1,13 @@
 package com.yb.springsecurity.jwt.auth.config;
 
-import com.yb.springsecurity.jwt.auth.CustomAuthenticationProvider;
-import com.yb.springsecurity.jwt.auth.JWTAuthenticationFilter;
-import com.yb.springsecurity.jwt.auth.JWTLoginFilter;
-import com.yb.springsecurity.jwt.auth.RedisSecurityContextRepository;
+import com.yb.springsecurity.jwt.auth.other.CustomAuthenticationProvider;
+import com.yb.springsecurity.jwt.auth.other.JwtAuthenticationFilter;
+import com.yb.springsecurity.jwt.auth.other.RedisSecurityContextRepository;
 import com.yb.springsecurity.jwt.auth.impl.AuthenticationEntryPointImpl;
 import com.yb.springsecurity.jwt.common.CommonDic;
 import com.yb.springsecurity.jwt.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -20,12 +18,9 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
-
 import javax.sql.DataSource;
 import java.io.Serializable;
 
@@ -37,9 +32,7 @@ import java.io.Serializable;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    //读取用户配置的登录页配置
-    @Autowired
-    private SecurityProperties securityProperties;
+
     @Autowired
     private DataSource dataSource;
     @Autowired
@@ -90,11 +83,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 //.antMatchers("/auth/yes").hasIpAddress("192.168.11.130")//这个注解目前还没发现,可以在这里设置
                 //所有请求需要身份认证
                 .anyRequest().authenticated().and()
-                //添加一个过滤器,所有访问/login的请求都交给JWTLoginFilter来处理
-                //这个处理所有JWT相关内容
-                .addFilterBefore(new JWTLoginFilter("/login", authenticationManager()), UsernamePasswordAuthenticationFilter.class)
                 //添加一个过滤器,对其他请求的token进行合法性认证
-                .addFilterBefore(new JWTAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .formLogin().loginPage("/login")
                 .and().logout()
                 .logoutUrl("/logout");
@@ -122,6 +112,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         //启动时自动生成相应表，可以在JdbcTokenRepositoryImpl里自己执行CREATE_TABLE_SQL脚本生成表
         //jdbcTokenRepository.setCreateTableOnStartup(true);
         return jdbcTokenRepository;
+    }
+
+    //解决过滤器无法注入Bean的问题
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(){
+        return new JwtAuthenticationFilter();
     }
 
     /**

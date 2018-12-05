@@ -1,4 +1,4 @@
-package com.yb.springsecurity.jwt.auth;
+package com.yb.springsecurity.jwt.auth.other;
 
 import com.yb.springsecurity.jwt.common.CommonDic;
 import org.slf4j.Logger;

@@ -1,5 +1,6 @@
 package com.yb.springsecurity.jwt.exception;
 
+import com.alibaba.fastjson.JSONException;
 import com.yb.springsecurity.jwt.common.ResultInfo;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.hibernate.LazyInitializationException;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.thymeleaf.exceptions.TemplateInputException;
+
 import java.security.SignatureException;
 
 /**
@@ -26,13 +29,14 @@ import java.security.SignatureException;
  */
 @RestControllerAdvice
 @Profile(value = {"dev", "test"})//可以指定捕捉处理的环境
-public class globalExceptionHandler {
-    public static final Logger log = LoggerFactory.getLogger(globalExceptionHandler.class);
+public class GlobalExceptionHandler {
+    public static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ParameterErrorException.class)
     public ResultInfo parameterErrorExceptionHandler(ParameterErrorException e) {
         //这里的获取到的信息就是自定义的信息,因为父类的信息被覆盖了
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());
     }
@@ -40,20 +44,71 @@ public class globalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(LazyInitializationException.class)
     public ResultInfo lazyInitializationExceptionHandler(LazyInitializationException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResultInfo httpRequestMethodNotSupportedExceptionHandler(HttpRequestMethodNotSupportedException e) {
+    @ExceptionHandler(UnsupportedOperationException.class)
+    public ResultInfo unsupportedOperationExceptionHandler(UnsupportedOperationException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(JSONException.class)
+    public ResultInfo jsonExceptionHandler(JSONException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(ArrayIndexOutOfBoundsException.class)
+    public ResultInfo arrayIndexOutOfBoundsExceptionHandler(ArrayIndexOutOfBoundsException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(InstantiationException.class)
+    public ResultInfo instantiationExceptionHandler(InstantiationException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(TemplateInputException.class)
+    public ResultInfo templateInputExceptionHandler(TemplateInputException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(NullPointerException.class)
+    public ResultInfo nullPointerExceptionHandler(NullPointerException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResultInfo methodArgumentTypeMismatchExceptionHandler(HttpRequestMethodNotSupportedException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.METHOD_NOT_ALLOWED.value())
                 .message(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(RequestRejectedException.class)
     public ResultInfo requestRejectedExceptionExceptionHandler(RequestRejectedException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());
     }
@@ -61,6 +116,7 @@ public class globalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(RetryTimeException.class)
     public ResultInfo retryTimeExceptionHandler(RetryTimeException e) {
+        log.info(e.getMessage());
         //这里的获取到的信息就是自定义的信息,因为父类的信息被覆盖了
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());
@@ -72,6 +128,7 @@ public class globalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(SignatureException.class)
     public ResultInfo signatureExceptionHandler(SignatureException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());
     }
@@ -82,6 +139,7 @@ public class globalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ExpiredJwtException.class)
     public ResultInfo expiredJwtExceptionHandler(ExpiredJwtException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());
     }
@@ -89,20 +147,15 @@ public class globalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResultInfo methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
-                .message(e.getMessage());
-    }
-
-    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResultInfo methodArgumentTypeMismatchExceptionHandler(HttpRequestMethodNotSupportedException e) {
-        return ResultInfo.status(HttpStatus.METHOD_NOT_ALLOWED.value())
                 .message(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, HttpMessageNotReadableException.class})
     public ResultInfo methodArgumentTypeMismatchExceptionHandler(MethodArgumentTypeMismatchException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.OK.value())
                 .message(e.getMessage());
     }
@@ -110,6 +163,7 @@ public class globalExceptionHandler {
     @ResponseStatus(HttpStatus.OK)
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResultInfo missingServletRequestParameterExceptionHandler(MissingServletRequestParameterException e) {
+        log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.OK.value())
                 .message(e.getMessage());
     }

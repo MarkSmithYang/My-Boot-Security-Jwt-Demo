@@ -54,8 +54,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         SysUser sysUser = sysUserRepository.findByUsernameAndFrom(username, from);
         //判断用户名是否正确
         if (sysUser == null) {
-            log.info("账号可能跟对应的from不一致");
-            ParameterErrorException.message("用户名或密码错误");
+            ParameterErrorException.message("用户名或密码错误或您的账号不属于此系统");
         }
         //判断用户密码是否正确
         if (!bCryptPasswordEncoder.matches(password, sysUser.getPassword())) {

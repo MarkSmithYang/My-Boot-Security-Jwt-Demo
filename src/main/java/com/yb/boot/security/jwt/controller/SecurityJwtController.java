@@ -11,12 +11,14 @@ import com.yb.boot.security.jwt.request.UserRequest;
 import com.yb.boot.security.jwt.response.JwtToken;
 import com.yb.boot.security.jwt.response.UserDetailsInfo;
 import com.yb.boot.security.jwt.service.SecurityJwtService;
+import com.yb.boot.security.jwt.utils.LoginUserUtils;
 import com.yb.boot.security.jwt.utils.RealIpGetUtils;
 import com.yb.boot.security.jwt.utils.VerifyCodeUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.validator.constraints.Length;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +30,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.security.PermitAll;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -47,6 +51,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Api("我的controller测试")
 @Controller
+@Validated
 @CrossOrigin//处理跨域
 //@RequestMapping("/auth")//添加一层路径是必要的,
 //我现在只在需要放开的接口添加一层共同的路径,便于放开路径/auth/login和/auth/verifyCode,
@@ -96,6 +101,8 @@ public class SecurityJwtController {
     public ResultInfo<List<String>> yes() {
         return ResultInfo.success(new ArrayList<String>() {{
             add("yes");
+            add(LoginUserUtils.getUsername());
+            System.err.println(LoginUserUtils.getUserDetails());
         }});
     }
 
@@ -150,7 +157,7 @@ public class SecurityJwtController {
     @ApiOperation(value = "list的查询", notes = "输入登录用户名可访问")
     @GetMapping("/list")
     @ResponseBody
-    public ResultInfo<List<String>> list(String username) {
+    public ResultInfo<List<String>> list(@RequestParam @Length(min = 10,message = "长度过长") String username) {
         return ResultInfo.success(new ArrayList<String>() {{
             add("rose1");
             add("jack2");
@@ -161,7 +168,6 @@ public class SecurityJwtController {
     //@PreFilter和@PostFilter用来对集合类型的参数或者返回值进行过滤
     //@Secured("admin,manager")//不支持Spring EL表达式
     //@PostAuthorize("hasAuthority('')")//方法调用之后执行认证
-    @PermitAll
     @ApiOperation(value = "getMessage的查询", notes = "无权可访问")
     @GetMapping("/getMessage")
     @ResponseBody
@@ -199,6 +205,26 @@ public class SecurityJwtController {
     public ResultInfo<JwtToken> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
                                            HttpServletResponse response) {
         //获取用户名
+        return getJwtTokenResultInfo(userRequest, request, response,CommonDic.FROM_FRONT);
+    }
+
+    //如果是表单的提交就不用@RequestBody,swagger用起来也比较舒服,如果前端传回来的是json对象,那么就要用
+    //就算是直接访问这个接口,跳过验证码的验证,这里也做了登录失败5次就等待时间
+    //@PermitAll//实测此注解不能放开接口,必须登录
+    @ApiOperation("后台登录")
+    @PostMapping("/backLogin")
+    @ResponseBody
+    public ResultInfo<JwtToken> backLogin(@Valid @RequestBody UserRequest userRequest, HttpServletRequest request,
+                                          HttpServletResponse response) {
+        return getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
+    }
+
+    /**
+     * 登录公共部门代码抽取
+     */
+    private ResultInfo<JwtToken> getJwtTokenResultInfo(UserRequest userRequest, HttpServletRequest request,
+                                                       HttpServletResponse response, String from) {
+        //获取用户名
         String username = userRequest.getUsername();
         //获取用户真实地址
         String ipAddress = RealIpGetUtils.getIpAddress(request);
@@ -211,7 +237,7 @@ public class SecurityJwtController {
         //检测登录用户再次ip的登录失败的次数
         //AntiViolenceCheckTools.ipForbidden(request,redisTemplate);
         //进行用户登录认证
-        JwtToken jwtToken = securityJwtService.authUser(userRequest, CommonDic.FROM_FRONT, response, request);
+        JwtToken jwtToken = securityJwtService.authUser(userRequest, from, response, request);
         //成功登录后清除用户登录失败(允许次数类)的次数
         AntiViolenceCheckTools.checkLoginTimesClear(redisTemplate, key);
         //成功登录后清零此用户名登录失败的次数

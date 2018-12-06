@@ -30,11 +30,11 @@ public class AntiViolenceCheckTools {
     private static final long FIFTEEN_MINUTES = 15;//分钟
     private static final long ONE_DAY_MINUTES = 24 * 60;//分钟
     private static final long THIRTY_MINUTES = 30;//分钟
-    public static final int FORMAL_LOGIN_TIMES = 5;
+    public static final int FORMAL_LOGIN_TIMES = 3;
     public static final int PHONE_LOGIN_TIMES = 2;
-    public static final int PHONE_LOGIN_TIMES_MAX = 5;
-    private static final int USERNAME_FORBIDDEN_TIMES = 5;
-    private static final int IP_FORBIDDEN_TIMES = 100;
+    public static final int PHONE_LOGIN_TIMES_MAX = 3;
+    private static final int USERNAME_FORBIDDEN_TIMES = 3;
+    private static final int IP_FORBIDDEN_TIMES = 99;
 
     /**
      * 验证用户名以前先检查用户是否多次错误登录,这样就能避免恶意程序让你一直去访问数据库服务
@@ -49,29 +49,32 @@ public class AntiViolenceCheckTools {
         }
         //增加登录次数--虽然还不知道用户登录是否成功就给它记录了一次,但是登录成功后会把它清空
         //或者减1来判断即可
-        if (times < Integer.MAX_VALUE) {
-            if (times <= FORMAL_LOGIN_TIMES) {
-                //增加次数
-                times++;
-                //存储更新后的数据
-                redisTemplate.opsForValue().set(key, times, THIRTY_MINUTES, TimeUnit.MINUTES);
+        if (times <= FORMAL_LOGIN_TIMES) {
+            //增加次数
+            times++;
+            //存储更新后的数据
+            redisTemplate.opsForValue().set(key, times, THIRTY_MINUTES, TimeUnit.MINUTES);
+        } else {
+            //超过指定的登录失败次数增加失败次数的过期时间
+            Double retryTime = Math.pow(2, times - FORMAL_LOGIN_TIMES);
+            //获取登录失败次数的过期时间
+            Long expire = redisTemplate.getExpire(key, TimeUnit.MINUTES);
+            //获取重试时间的int值
+            Long addTime = retryTime.intValue() + expire;
+            //如果重试时间超过了Integer最大值的1/2的时候,就不让其再变大了
+            if (addTime > 1000) {
+                addTime = 1000L;
             } else {
-                //超过指定的登录失败次数增加失败次数的过期时间
-                Double retryTime = Math.pow(2, times - FORMAL_LOGIN_TIMES);
-                //如果重试时间超过了Integer最大值的1/2的时候,就不让其再变大了
-                if (retryTime > Integer.MAX_VALUE / 2) {
-                    retryTime = Integer.MAX_VALUE / 2 + 0D;
-                }
-                //获取登录失败次数的过期时间
-                Long expire = redisTemplate.getExpire(key, TimeUnit.MINUTES);
-                //获取重试时间的int值
-                Long addTime = retryTime.intValue() + expire;
-                //更新失败次数,次数越多,等待时间越长
-                times++;
-                redisTemplate.opsForValue().set(key, times, addTime + THIRTY_MINUTES, TimeUnit.MINUTES);
-                //返回提示信息
-                ParameterErrorException.message("您登录失败的次数过多,请" + addTime + "分钟后再登陆");
+                addTime = addTime + THIRTY_MINUTES;
             }
+            //更新失败次数,次数越多,等待时间越长
+            if (times < 101) {
+                //当超过101的最大值时,不在增加次数
+                times++;
+            }
+            redisTemplate.opsForValue().set(key, times, addTime, TimeUnit.MINUTES);
+            //返回提示信息
+            ParameterErrorException.message("您登录失败的次数过多,请" + addTime + "分钟后再登陆");
         }
     }
 
@@ -109,7 +112,9 @@ public class AntiViolenceCheckTools {
         if (times <= PHONE_LOGIN_TIMES) {
             times++;
             //增加更新其过期时间--每登录一次,登录失败次数过期时间就延长15分钟
-            retryTime = retryTime + FIFTEEN_MINUTES;
+            if (retryTime < 1000) {
+                retryTime = retryTime + FIFTEEN_MINUTES;
+            }
             //连续两次登录失败则过期时间接近30分钟3~5次登录每次加15分钟
             redisTemplate.opsForValue().set(key, times, retryTime, TimeUnit.MINUTES);
         } else {
@@ -121,8 +126,15 @@ public class AntiViolenceCheckTools {
             //生成等待时间
             Double retry = Math.pow(times - 1, 2);
             retryTime = retry.longValue();
+            if (retryTime >= 1000) {
+                //不再增加时间
+                retryTime = 1000L;
+            }
             //更新过期时间
-            times++;
+            if (times < 101) {
+                //不在增加次数
+                times++;
+            }
             redisTemplate.opsForValue().set(key, times, retryTime, TimeUnit.MINUTES);
             RetryTimeException.message("操作频繁，请" + retryTime * 60 + "秒后重试");
         }

@@ -4,13 +4,13 @@ Navicat MySQL Data Transfer
 Source Server         : localhost
 Source Server Version : 50605
 Source Host           : localhost:3306
-Source Database       : securityjwt
+Source Database       : boot_security_jwt
 
 Target Server Type    : MYSQL
 Target Server Version : 50605
 File Encoding         : 65001
 
-Date: 2018-11-30 10:04:15
+Date: 2018-12-06 10:14:11
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -35,7 +35,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of module
 -- ----------------------------
 BEGIN;
-INSERT INTO `module` VALUES ('1', '1', '1');
+INSERT INTO `module` VALUES ('1', 'center', '用户中心'), ('2', 'index', '首页');
 COMMIT;
 
 -- ----------------------------
@@ -59,7 +59,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of module_users
 -- ----------------------------
 BEGIN;
-INSERT INTO `module_users` VALUES ('1', '1');
+INSERT INTO `module_users` VALUES ('1', '3');
 COMMIT;
 
 -- ----------------------------
@@ -82,7 +82,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of permission
 -- ----------------------------
 BEGIN;
-INSERT INTO `permission` VALUES ('1', '1', '1');
+INSERT INTO `permission` VALUES ('1', 'query', '查'), ('2', 'update', '改');
 COMMIT;
 
 -- ----------------------------
@@ -106,7 +106,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of permission_modules
 -- ----------------------------
 BEGIN;
-INSERT INTO `permission_modules` VALUES ('1', '1');
+INSERT INTO `permission_modules` VALUES ('1', '1'), ('2', '1'), ('1', '2');
 COMMIT;
 
 -- ----------------------------
@@ -130,7 +130,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of permission_roles
 -- ----------------------------
 BEGIN;
-INSERT INTO `permission_roles` VALUES ('1', '1');
+INSERT INTO `permission_roles` VALUES ('1', '1'), ('2', '1'), ('1', '2');
 COMMIT;
 
 -- ----------------------------
@@ -154,7 +154,30 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of permission_users
 -- ----------------------------
 BEGIN;
-INSERT INTO `permission_users` VALUES ('1', '1');
+INSERT INTO `permission_users` VALUES ('1', '4');
+COMMIT;
+
+-- ----------------------------
+-- Table structure for persistent_logins
+-- ----------------------------
+DROP TABLE IF EXISTS `persistent_logins`;
+CREATE TABLE `persistent_logins` (
+`username`  varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ,
+`series`  varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ,
+`token`  varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ,
+`last_used`  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP ,
+PRIMARY KEY (`series`)
+)
+ENGINE=InnoDB
+DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
+COMMENT='记住我功能的存储表'
+
+;
+
+-- ----------------------------
+-- Records of persistent_logins
+-- ----------------------------
+BEGIN;
 COMMIT;
 
 -- ----------------------------
@@ -177,7 +200,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of role
 -- ----------------------------
 BEGIN;
-INSERT INTO `role` VALUES ('1', '1', '1');
+INSERT INTO `role` VALUES ('1', 'admin', '超管'), ('2', 'manager', '普管');
 COMMIT;
 
 -- ----------------------------
@@ -201,7 +224,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of role_users
 -- ----------------------------
 BEGIN;
-INSERT INTO `role_users` VALUES ('1', '1');
+INSERT INTO `role_users` VALUES ('1', '1'), ('2', '2');
 COMMIT;
 
 -- ----------------------------
@@ -227,7 +250,7 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of sys_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `sys_user` VALUES ('1', '2018-11-28 10:03:38', null, '$2a$10$taJbEr6KEj3HlhYxVAFEUOV01Y7ydH8SrJVqki4Pgj9qxV04vMSoK', 'jack', null);
+INSERT INTO `sys_user` VALUES ('1', '2018-11-28 10:03:38', null, '$2a$10$taJbEr6KEj3HlhYxVAFEUOV01Y7ydH8SrJVqki4Pgj9qxV04vMSoK', 'jack', 'front'), ('2', '2018-12-04 16:11:30', null, '$2a$10$aIK4oDDW6JstugBYQalf0O.FNwKdFQxium.CjAkWg7Rxmez8uCwny', 'rose', 'back'), ('3', '2018-12-04 16:11:55', null, '$2a$10$MhGywFBs7UbCdZkR6HzgVeUyX77kquKQF8DpBOumo/bMR1HiL1uFS', 'tom', 'front'), ('4', '2018-12-04 16:12:10', null, '$2a$10$GnLrcjvVZa4tZ/HviW5Kue3sxhTyc2vIAidDV5uOIM6uOD8J5kBse', 'jerry', 'back');
 COMMIT;
 
 -- ----------------------------
@@ -253,5 +276,5 @@ DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 -- Records of user_info
 -- ----------------------------
 BEGIN;
-INSERT INTO `user_info` VALUES ('1', '1', '1', '1', '1');
+INSERT INTO `user_info` VALUES ('1', '大佬部', '1', 'A', '1'), ('2', '普通部门a', '2', 'F', '1'), ('3', '普通部门b', '3', 'G', '3'), ('4', '普通部门c', '4', 'H', '4');
 COMMIT;

@@ -105,6 +105,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .userDetailsService(userDetailsService);
     }
 
+    /**
+     * 此功能暂时无法测试
+     */
     @Bean
     public PersistentTokenRepository persistentTokenRepository() {
         JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
@@ -130,11 +133,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         //使用自定义身份验证(组件)
         auth.authenticationProvider(customAuthenticationProvider);
-        try {
-            auth.userDetailsService(userDetailsService);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            auth.userDetailsService(userDetailsService);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override

@@ -76,14 +76,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         //封装用户角色信息
         if (CollectionUtils.isNotEmpty(detailsInfo.getRoles())) {
             Set<SimpleGrantedAuthority> collect = detailsInfo.getRoles().stream().map(s -> {
-                return new SimpleGrantedAuthority(CommonDic.ROLES_ + s);}).collect(Collectors.toSet());
+                return new SimpleGrantedAuthority(CommonDic.ROLE_ + s);}).collect(Collectors.toSet());
             //合并集合数据
             authorities.addAll(collect);
         }
         //封装用户模块信息
         if (CollectionUtils.isNotEmpty(detailsInfo.getModules())) {
             Set<SimpleGrantedAuthority> collect = detailsInfo.getModules().stream().map(a->{
-                return new SimpleGrantedAuthority(CommonDic.MODULES_+a);}).collect(Collectors.toSet());
+                return new SimpleGrantedAuthority(CommonDic.MODULE_+a);}).collect(Collectors.toSet());
             //合并集合数据
             authorities.addAll(collect);
         }

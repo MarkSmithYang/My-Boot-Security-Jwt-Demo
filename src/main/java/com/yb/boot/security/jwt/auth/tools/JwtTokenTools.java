@@ -33,7 +33,7 @@ public class JwtTokenTools {
                                            HttpServletResponse response, JwtProperties jwtProperties) {
         //判断用户信息
         if(detailsInfo==null){
-            log.info("用于生成jwt的用户信息为null");
+            log.info("token不合法,解析出的用户信息为null");
             return null;
         }
         //创建jwt(token)

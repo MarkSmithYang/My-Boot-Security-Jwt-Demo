@@ -9,8 +9,8 @@ public class CommonDic {
 
     //用于区分权限角色模块构造SimpleGrantedAuthority
     //(主要避免权限名和角色名和模块名通过造成的权限混乱)
-    public static final String ROLES_ = "ROLES_";
-    public static final String MODULES_ = "MODULES_";
+    public static final String ROLE_ = "ROLE_";
+    public static final String MODULE_ = "MODULE_";
     //请求头Header的token的key
     public static final String HEADER_SINGLE = "Authorization";
     //过期时间设置

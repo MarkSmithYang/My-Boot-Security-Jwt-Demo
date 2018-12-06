@@ -85,7 +85,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (CollectionUtils.isNotEmpty(roles)) {
             roles.forEach(s -> {
                 //封装角色
-                authorities.add(new SimpleGrantedAuthority(CommonDic.ROLES_+s.getRole()));
+                authorities.add(new SimpleGrantedAuthority(CommonDic.ROLE_+s.getRole()));
                 //封装角色权限
                 if (CollectionUtils.isNotEmpty(s.getPermissions())) {
                     //我这里没有写实现类来封装直接用了lambda表达式做的实现-->我这类没有用对象的id,
@@ -101,7 +101,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (CollectionUtils.isNotEmpty(modules)) {
             modules.forEach(s -> {
                 //添加模块到authorities
-                authorities.add(new SimpleGrantedAuthority(CommonDic.MODULES_+s.getModule()));
+                authorities.add(new SimpleGrantedAuthority(CommonDic.MODULE_+s.getModule()));
                 //添加模块权限到auhorities
                 if (CollectionUtils.isNotEmpty(s.getPermissions())) {
                     s.getPermissions().forEach(a -> {

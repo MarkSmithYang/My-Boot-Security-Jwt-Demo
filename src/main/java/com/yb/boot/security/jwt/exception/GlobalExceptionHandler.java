@@ -168,13 +168,13 @@ public class GlobalExceptionHandler {
                 .message(e.getMessage());
     }
 
-//    @ResponseStatus(HttpStatus.FORBIDDEN)
-//    @ExceptionHandler(AccessDeniedException.class)
-//    public ResultInfo accessDeniedExceptionHandler(AccessDeniedException e) {
-//        log.error(e.getMessage(), e);
-//        return ResultInfo.status(HttpStatus.FORBIDDEN.value())
-//                .message("权限不足");
-//    }
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResultInfo accessDeniedExceptionHandler(AccessDeniedException e) {
+        log.error(e.getMessage(), e);
+        return ResultInfo.status(HttpStatus.FORBIDDEN.value())
+                .message("权限不足");
+    }
 
     /**
      * 运行时异常捕获处理

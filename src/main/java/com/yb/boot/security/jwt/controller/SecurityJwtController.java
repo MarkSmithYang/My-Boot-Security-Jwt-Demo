@@ -23,8 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,9 +75,14 @@ public class SecurityJwtController {
     }
 
     @GetMapping("/logout")
-    public String logout() {
+    public String logout(HttpServletResponse response, HttpServletRequest request) {
         //清空用户的登录
-        SecurityContextHolder.getContext().setAuthentication(null);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        //正确的登录姿势
+        if (auth != null) {
+            //调用api登出
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
         return "/login";
     }
 
@@ -108,8 +115,8 @@ public class SecurityJwtController {
     }
 
     //@PreFilter和@PostFilter用来对集合类型的参数或者返回值进行过滤
-    @PreAuthorize("hasRole('admin')")//hasAuthority和hasRole功能一样
-    @ApiOperation(value = "world的查询", notes = "要admin角色可访问")
+    @PreAuthorize("hasAuthority('" + CommonDic.ROLE_ + "admin')")//hasAuthority和hasRole功能一样
+    @ApiOperation(value = "world的查询", notes = "admin角色可访问")
     @GetMapping("/world")
     @ResponseBody
     public ResultInfo<List<String>> world() {
@@ -121,7 +128,7 @@ public class SecurityJwtController {
     //@PreFilter和@PostFilter用来对集合类型的参数或者返回值进行过滤
     //@Secured("admin,manager")//不支持Spring EL表达式
     //@PostAuthorize("hasAuthority('')")//方法调用之后执行认证
-    @PreAuthorize("hasAuthority('" + CommonDic.MODULES_ + "center')")//方法执行之前执行认证
+    @PreAuthorize("hasAuthority('" + CommonDic.MODULE_ + "center')")//方法执行之前执行认证
     @ApiOperation(value = "users的查询", notes = "要center模块权限")
     @GetMapping("/users")
     @ResponseBody
@@ -140,7 +147,7 @@ public class SecurityJwtController {
     //@PreAuthorize("principal.username.toString().equals(#username)")//字符串化也不得行
     @PreAuthorize("authentication.name.equals(#username)")
     //这个直接在安全上下文取的就可以,或许是因为解析token的时候,只设置了SecurityContent而没有UserDetails
-    @ApiOperation(value = "list的查询", notes = "用户名为jerry可访问")
+    @ApiOperation(value = "list的查询", notes = "输入登录用户名可访问")
     @GetMapping("/list")
     @ResponseBody
     public ResultInfo<List<String>> list(String username) {
@@ -162,27 +169,7 @@ public class SecurityJwtController {
         return ResultInfo.success("我不需要权限就可以访问哦,在接口方法上放开,而不是通过antMatch");
     }
 
-    @ApiOperation(value = "获取图片验证码")
-    @GetMapping("captcha")
-    @ResponseBody
-    public ResultInfo<CaptchaParam> captcha(@ApiParam("宽度") @RequestParam(defaultValue = "110") int width, @ApiParam("高度") @RequestParam(defaultValue = "34") int height) throws IOException {
-        String code = VerifyCodeUtils.generateVerifyCode(4);
-        String base64img = VerifyCodeUtils.base64Image(width, height, code);
-        String signature = bCryptPasswordEncoder.encode(CODE_HEADER + code.toUpperCase());
-        CaptchaParam data = new CaptchaParam(base64img, signature);
-        return ResultInfo.success(data);
-    }
-
-    @ApiOperation(value = "校验验证码")
-    @PostMapping("checkCaptcha")
-    @ResponseBody
-    public ResultInfo<String> checkCaptcha(@Valid @RequestBody CaptchaParam param) {
-        if (bCryptPasswordEncoder.matches(CODE_HEADER + param.getCaptcha().toUpperCase(), param.getSignature())) {
-            return ResultInfo.success("验证码正确");
-        }
-        return ResultInfo.error("验证码错误");
-    }
-
+    @PreAuthorize("isAuthenticated()")
     @ApiOperation("刷新token")
     @PostMapping("/refreshToken")
     @ResponseBody
@@ -195,7 +182,7 @@ public class SecurityJwtController {
         if (StringUtils.isNotBlank(accessToken)) {
             JwtToken jwtToken = new JwtToken();
             jwtToken.setAccessToken(CommonDic.TOKEN_PREFIX + accessToken);
-            jwtToken.setRefreshToken(CommonDic.TOKEN_PREFIX + refreshToken);
+            jwtToken.setRefreshToken(CommonDic.TOKEN_PREFIX + refreshToken.getRefreshToken());
             jwtToken.setTokenExpire(jwtProperties.getExpireSeconds());
             //返回数据
             return ResultInfo.success(jwtToken);
@@ -204,6 +191,8 @@ public class SecurityJwtController {
 
     }
 
+    //如果是表单的提交就不用@RequestBody,swagger用起来也比较舒服,如果前端传回来的是json对象,那么就要用
+    //就算是直接访问这个接口,跳过验证码的验证,这里也做了登录失败5次就等待时间
     @ApiOperation("前台登录")
     @PostMapping("/frontLogin")
     @ResponseBody
@@ -216,7 +205,7 @@ public class SecurityJwtController {
         //拼接存储key用以存储信息到redis
         String key = CommonDic.LOGIN_SIGN_PRE + ipAddress + username;
         //检测用户登录次数是否超过指定次数,超过就不再往下验证用户信息
-        //AntiViolenceCheckTools.checkLoginTimes(redisTemplate, key);
+        AntiViolenceCheckTools.checkLoginTimes(redisTemplate, key);
         //检测用户名登录失败次数--->根据自己的需求添加我这里就用一个,其他的注释
         //AntiViolenceCheckTools.usernameOneDayForbidden(redisTemplate, username);
         //检测登录用户再次ip的登录失败的次数
@@ -233,7 +222,7 @@ public class SecurityJwtController {
         return ResultInfo.success(jwtToken);
     }
 
-    //--------------------------------------------------------------------------------------------------------
+    //----------------------验证码都是提供生成接口和校验接口有前端请求生成和校验------------------------------
 
     @GetMapping("/verifyCodeCheck")
     @ResponseBody
@@ -288,5 +277,28 @@ public class SecurityJwtController {
             log.info("验证码输出异常");
             e.printStackTrace();
         }
+    }
+
+    //-------------------------------------另一种方式的验证码实现-------------------------------------------
+
+    @ApiOperation(value = "获取图片验证码")
+    @GetMapping("captcha")
+    @ResponseBody
+    public ResultInfo<CaptchaParam> captcha(@ApiParam("宽度") @RequestParam(defaultValue = "110") int width, @ApiParam("高度") @RequestParam(defaultValue = "34") int height) throws IOException {
+        String code = VerifyCodeUtils.generateVerifyCode(4);
+        String base64img = VerifyCodeUtils.base64Image(width, height, code);
+        String signature = bCryptPasswordEncoder.encode(CODE_HEADER + code.toUpperCase());
+        CaptchaParam data = new CaptchaParam(base64img, signature);
+        return ResultInfo.success(data);
+    }
+
+    @ApiOperation(value = "校验验证码")
+    @PostMapping("checkCaptcha")
+    @ResponseBody
+    public ResultInfo<String> checkCaptcha(@Valid @RequestBody CaptchaParam param) {
+        if (bCryptPasswordEncoder.matches(CODE_HEADER + param.getCaptcha().toUpperCase(), param.getSignature())) {
+            return ResultInfo.success("验证码正确");
+        }
+        return ResultInfo.error("验证码错误");
     }
 }

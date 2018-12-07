@@ -23,8 +23,8 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
     protected void addViewControllers(ViewControllerRegistry registry) {
         //super.addViewControllers(registry);
         //接口/login跳转视图login(应该就是login.html或login.jsp,但是似乎没有什么效果)
-        registry.addViewController("/login").setViewName("login");
-        //处理/没有映射的问题(日志老是打印出来,也可以在controller写接口)
+        registry.addViewController("/toLogin").setViewName("/login");
+        //处理/没有映射的问题(日志老是打印出来,也可以在controller写接口)--这里省了写/跳转到login的接口了
         registry.addViewController("/").setViewName("/login");
     }
 

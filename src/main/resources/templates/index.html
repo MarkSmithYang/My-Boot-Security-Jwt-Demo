@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        #growls.default {
+            top: 15px !important;
+            left: 520px !important;
+            text-align: center;
+            width: auto;
+            height: auto;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <title>首页</title>
+    <!--官网下载地址url-->
+    <!--<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>-->
+    <!--百度云-CDN-就是jquery的url->
+    <!--<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>-->
+    <script src="../static/js/jquery-3.3.1.js"></script>
+    <script src="../static/js/jquery.growl.js"></script>
+    <link href="../static/css/jquery.growl.css" rel="stylesheet"/>
+    <!--注意Html5不需要type声明了-->
+    <!-------------------------------------------------------------------------------------------->
+    <script>
+        $(document).ready(function () {
+            return $.growl.notice({
+                title: "欢迎您",
+                message: "亲爱的用户!"
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1 style="color: darkred">我的网站首页</h1>
+    <hr style="color: green;font-size: 3em">
+
+    <table>
+        <tr><a href="/list">我的资源1</a></tr>
+        <tr><a href="/users">我的资源2</a></tr>
+        <tr><a href="/world">我的资源3</a></tr>
+        <tr><a href="/hello">我的资源4</a></tr>
+        <tr><a href="/yes">我的资源5</a></tr>
+        <tr><a href="/getMessage">我的资源6</a></tr>
+        <tr><a href="/logout1" style="color: #2ECC71">退出登录</a></tr>
+        <tr><a href="/backLogin" style="color: #F39C12">登录后台系统</a></tr>
+    </table>
+
+</body>
+</html>

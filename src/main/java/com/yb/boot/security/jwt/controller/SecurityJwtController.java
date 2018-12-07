@@ -79,7 +79,14 @@ public class SecurityJwtController {
         return "/login";
     }
 
-    @GetMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/index")
+    public String index() {
+        return "/index";
+    }
+
+    //如果想要走自己写的登出接口,接口不能为/logout,这个默认会走配置那里的.logout()
+    @GetMapping("/logout1")
     public String logout(HttpServletResponse response, HttpServletRequest request) {
         //清空用户的登录
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -88,7 +95,7 @@ public class SecurityJwtController {
             //调用api登出
             new SecurityContextLogoutHandler().logout(request, response, auth);
         }
-        return "/login";
+        return "forward:/toLogin";
     }
 
     //@PreFilter和@PostFilter用来对集合类型的参数或者返回值进行过滤
@@ -199,13 +206,21 @@ public class SecurityJwtController {
 
     //如果是表单的提交就不用@RequestBody,swagger用起来也比较舒服,如果前端传回来的是json对象,那么就要用
     //就算是直接访问这个接口,跳过验证码的验证,这里也做了登录失败5次就等待时间
+//    @ApiOperation("前台登录")
+//    @PostMapping("/frontLogin")
+//    @ResponseBody
+//    public ResultInfo<JwtToken> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
+//                                           HttpServletResponse response) {
+//        //获取用户名
+//        return getJwtTokenResultInfo(userRequest, request, response,CommonDic.FROM_FRONT);
+//    }
+
     @ApiOperation("前台登录")
     @PostMapping("/frontLogin")
-    @ResponseBody
-    public ResultInfo<JwtToken> frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
+    public String frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
                                            HttpServletResponse response) {
         //获取用户名
-        return getJwtTokenResultInfo(userRequest, request, response,CommonDic.FROM_FRONT);
+        return "/index";
     }
 
     //如果是表单的提交就不用@RequestBody,swagger用起来也比较舒服,如果前端传回来的是json对象,那么就要用

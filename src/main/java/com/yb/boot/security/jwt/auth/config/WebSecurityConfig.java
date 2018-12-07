@@ -21,6 +21,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+
 import javax.sql.DataSource;
 import java.io.Serializable;
 
@@ -85,12 +86,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated().and()
                 //添加一个过滤器,对其他请求的token进行合法性认证
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .formLogin().loginPage("/login")
-                .and().logout()
-                .logoutUrl("/logout");
-
-        // 自定义注销
-        http.logout().logoutUrl("/logout").logoutSuccessUrl("/login")
+                .formLogin()
+                //指定登录页是"/login"
+                .loginPage("/login")
+                //登录成功后默认跳转到"list"--->还是要通过登录接口跳转,可能通过记住密码会走这里
+                .defaultSuccessUrl("/index");
+        //自定义注销---默认优先走它--实测证明,如果自己写的登出接口路径为/logout,那么它就会走这个配置登出
+        //如果名字不一样,就走自定义的登出
+        http.logout().logoutUrl("/logout")
+                //退出登录后的默认url是"/toLogin"
+                .logoutSuccessUrl("/toLogin")
                 .invalidateHttpSession(true);
 
         //记住我功能配置
@@ -119,7 +124,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     //解决过滤器无法注入Bean的问题
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(){
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
     }
 
@@ -133,17 +138,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         //使用自定义身份验证(组件)
         auth.authenticationProvider(customAuthenticationProvider);
-//        try {
-//            auth.userDetailsService(userDetailsService);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
     }
 
     @Override
     public void configure(WebSecurity web) throws Exception {
-        // 设置不拦截规则
-        web.ignoring().antMatchers("/static/**", "/**/*.jsp", "/**/*.html");
+        // 设置不拦截规则,这里确实会优先上面的生效
+        web.ignoring().antMatchers(commonUrl);
     }
 
 }

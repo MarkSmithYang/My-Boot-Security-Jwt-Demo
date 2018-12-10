@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @SpringBootApplication
 @EnableTransactionManagement//开启事物支持
-@EnableWebMvc//启动mvc的web配置
+//@EnableWebMvc//启动mvc的web配置--据说可以解决静态资源加载不了的问题
 @EnableGlobalMethodSecurity(prePostEnabled = true)//开启方法注解权限控制
 public class BootSecurityJwtDemoApplication{
 

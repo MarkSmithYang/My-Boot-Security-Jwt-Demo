@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.web.firewall.RequestRejectedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -132,6 +133,14 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(UnsupportedOperationException.class)
     public ResultInfo unsupportedOperationExceptionHandler(UnsupportedOperationException e) {
+        log.info(e.getMessage());
+        return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
+    public ResultInfo authenticationCredentialsNotFoundExceptionHandler(AuthenticationCredentialsNotFoundException e) {
         log.info(e.getMessage());
         return ResultInfo.status(HttpStatus.BAD_REQUEST.value())
                 .message(e.getMessage());

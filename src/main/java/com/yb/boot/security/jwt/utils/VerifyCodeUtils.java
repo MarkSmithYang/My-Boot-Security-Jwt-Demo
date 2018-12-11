@@ -184,8 +184,8 @@ public class VerifyCodeUtils {
 
         // 绘制干扰线
         Random random = new Random();
-        g2.setColor(getRandColor(160, 200));// 设置线条的颜色
-        for (int i = 0; i < 100; i++) {
+        g2.setColor(getRandColor(200, 250));// 设置线条的颜色
+        for (int i = 0; i <100; i++) {
             int x = random.nextInt(w - 1);
             int y = random.nextInt(h - 1);
             int xl = random.nextInt(12) + 1;
@@ -205,7 +205,7 @@ public class VerifyCodeUtils {
 
         shear(g2, w, h, c);// 使图片扭曲
 
-        g2.setColor(getRandColor(100, 160));
+        g2.setColor(getRandColor(60, 100));
         int fontSize = h - 4;
         Font font = new Font("Algerian", Font.ITALIC, fontSize);
         g2.setFont(font);
@@ -275,10 +275,10 @@ public class VerifyCodeUtils {
 
     private static void shearY(Graphics g, int w1, int h1, Color color) {
 
-        int period = random.nextInt(40) + 10; // 50;
+        int period = random.nextInt(30) + 10; // 40;
 
         boolean borderGap = true;
-        int frames = 20;
+        int frames = 15;
         int phase = 7;
         for (int i = 0; i < w1; i++) {
             double d = (period >> 1) * Math.sin((double) i / (double) period + (6.2831853071795862D * phase) / frames);

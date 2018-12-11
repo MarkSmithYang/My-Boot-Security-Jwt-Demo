@@ -81,14 +81,14 @@
 </head>
 <body>
 <table>
-    <form action="/frontLogin" method="post">
+    <form action="/backLogin" method="post">
         <tr>
             <td align="center" colspan="2">
-                <h2 style="color: #00ee00">前台登录中心</h2>
+                <h2 style="color:#1f637b">后台登录中心</h2>
             </td>
         </tr>
         <tr>
-            <td align="center">用户名</td>
+            <td  align="center">用户名</td>
             <td><input type="text" name="username"></td>
         </tr>
         <tr>
@@ -106,14 +106,11 @@
             <td><input type="checkbox" name="remember-me"/></td>
         </tr>
         <tr>
-            <td align="center"><input type="submit" disabled="disabled" id="reg" value="登录"></td>
+            <td  align="center"><input type="submit" disabled="disabled" id="reg" value="登录"></td>
             <td><a href="register">注册</a></td>
         </tr>
         <tr>
-            <td colspan="2"><a href="/loginBack">登录后台系统</a></td>
-        </tr>
-        <tr>
-            <td align="center">
+            <td  align="center">
                 <dev th:text="${msg}" style="color: red"></dev>
             </td>
         </tr>

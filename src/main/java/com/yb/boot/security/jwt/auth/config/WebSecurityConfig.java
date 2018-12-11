@@ -1,5 +1,6 @@
 package com.yb.boot.security.jwt.auth.config;
 
+import com.yb.boot.security.jwt.auth.impl.AccessDeniedHandlerImpl;
 import com.yb.boot.security.jwt.common.CommonDic;
 import com.yb.boot.security.jwt.service.UserDetailsServiceImpl;
 import com.yb.boot.security.jwt.auth.other.CustomAuthenticationProvider;
@@ -43,9 +44,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private CustomAuthenticationProvider customAuthenticationProvider;
     @Autowired
-    private com.yb.boot.security.jwt.auth.impl.AccessDeniedHandlerImpl AccessDeniedHandlerImpl;
+    private RedisSecurityContextRepository redisSecurityContextRepository;
     @Autowired
-    private RedisTemplate<String, Serializable> redisTemplate;
+    private AccessDeniedHandlerImpl accessDeniedHandlerImpl;
 
     @Value("${allow.common.url}")
     private String[] commonUrl;
@@ -63,11 +64,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         //关闭默认的登录认证
         http.httpBasic().disable()
                 //添加处理ajxa的类实例
-                .exceptionHandling().accessDeniedHandler(AccessDeniedHandlerImpl)
+                .exceptionHandling().accessDeniedHandler(accessDeniedHandlerImpl)
                 //添加拦截未登录用户访问的提示类实例
                 .authenticationEntryPoint(authenticationEntryPoint).and()
                 //添加改session为redis存储实例
-                .securityContext().securityContextRepository(new RedisSecurityContextRepository(redisTemplate)).and()
+                .securityContext().securityContextRepository(redisSecurityContextRepository).and()
                 //把session的代理创建关闭
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER);
 
@@ -79,7 +80,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 //放开登录和验证码相关的接口(建议不要加层路径例如/auth,
                 //会导致/security下的其他的不想放开的接口被放开等问题,直接放确定的最好,方正也没有几个接口)
                 .antMatchers(serverUrl).permitAll()
-                .antMatchers(HttpMethod.GET, commonUrl).permitAll()
+                //.antMatchers(HttpMethod.GET, commonUrl).permitAll()//这个下面已经设置的了
                 //访问指定路径的ip地址校验,访问指定路径的权限校验--这些接口需要的权限可以通过注解@PreAuthorize等来设置
                 //.antMatchers("/auth/yes").hasIpAddress("192.168.11.130")//这个注解目前还没发现,可以在这里设置
                 //所有请求需要身份认证
@@ -89,7 +90,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin()
                 //指定登录页是"/login"
                 .loginPage("/login")
-                //登录成功后默认跳转到"list"--->还是要通过登录接口跳转,可能通过记住密码会走这里
+                //登录成功后默认跳转到"/index"--->还是要通过登录接口跳转,可能通过记住密码会走这里
                 .defaultSuccessUrl("/index");
         //自定义注销---默认优先走它--实测证明,如果自己写的登出接口路径为/logout,那么它就会走这个配置登出
         //如果名字不一样,就走自定义的登出
@@ -141,9 +142,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    public void configure(WebSecurity web) throws Exception {
-        // 设置不拦截规则,这里确实会优先上面的生效
-        web.ignoring().antMatchers(commonUrl);
+    public void configure(WebSecurity web){
+        // 设置不拦截规则,这里确实会优先上面的生效,其实如果这里设置了,上面就不用设置了
+        web.ignoring().antMatchers(HttpMethod.GET,commonUrl);
     }
 
 }

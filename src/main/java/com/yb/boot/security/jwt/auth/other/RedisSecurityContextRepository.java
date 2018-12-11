@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpRequestResponseHolder;
 import org.springframework.security.web.context.SaveContextOnUpdateOrErrorResponseWrapper;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.util.WebUtils;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
  * Description:改session存储为redis的配置类
  * date 2018/11/30
  */
+@Component
 public class RedisSecurityContextRepository implements SecurityContextRepository {
     public static final Logger logger = LoggerFactory.getLogger(RedisSecurityContextRepository.class);
 

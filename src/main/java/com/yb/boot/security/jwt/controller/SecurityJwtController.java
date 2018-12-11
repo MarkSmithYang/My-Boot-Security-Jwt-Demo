@@ -79,12 +79,18 @@ public class SecurityJwtController {
         return "/login";
     }
 
+    @GetMapping("/loginBack")
+    public String loginBack() {
+        return "/loginBack";
+    }
+
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/index")
     public String index() {
         return "/index";
     }
 
+    @PreAuthorize("isAuthenticated()")
     //如果想要走自己写的登出接口,接口不能为/logout,这个默认会走配置那里的.logout()
     @GetMapping("/logout1")
     public String logout(HttpServletResponse response, HttpServletRequest request) {
@@ -164,7 +170,7 @@ public class SecurityJwtController {
     @ApiOperation(value = "list的查询", notes = "输入登录用户名可访问")
     @GetMapping("/list")
     @ResponseBody
-    public ResultInfo<List<String>> list(@RequestParam @Length(min = 10,message = "长度过长") String username) {
+    public ResultInfo<List<String>> list(@RequestParam @Length(min = 10, message = "长度过长") String username) {
         return ResultInfo.success(new ArrayList<String>() {{
             add("rose1");
             add("jack2");
@@ -218,20 +224,30 @@ public class SecurityJwtController {
     @ApiOperation("前台登录")
     @PostMapping("/frontLogin")
     public String frontLogin(@Valid UserRequest userRequest, HttpServletRequest request,
-                                           HttpServletResponse response) {
-        //获取用户名
+                             HttpServletResponse response) {
+        getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_FRONT);
+        //登录成功之后跳转
         return "/index";
     }
 
     //如果是表单的提交就不用@RequestBody,swagger用起来也比较舒服,如果前端传回来的是json对象,那么就要用
     //就算是直接访问这个接口,跳过验证码的验证,这里也做了登录失败5次就等待时间
     //@PermitAll//实测此注解不能放开接口,必须登录
+//    @ApiOperation("后台登录")
+//    @PostMapping("/backLogin")
+//    @ResponseBody
+//    public ResultInfo<JwtToken> backLogin(@Valid @RequestBody UserRequest userRequest, HttpServletRequest request,
+//                                          HttpServletResponse response) {
+//        return getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
+//    }
+
     @ApiOperation("后台登录")
     @PostMapping("/backLogin")
-    @ResponseBody
-    public ResultInfo<JwtToken> backLogin(@Valid @RequestBody UserRequest userRequest, HttpServletRequest request,
-                                          HttpServletResponse response) {
-        return getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
+    public String backLogin(@Valid UserRequest userRequest, HttpServletRequest request,
+                            HttpServletResponse response) {
+        getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
+        //登录成功之后跳转
+        return "/layout";
     }
 
     /**

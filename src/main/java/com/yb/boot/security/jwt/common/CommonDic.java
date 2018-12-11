@@ -24,7 +24,7 @@ public class CommonDic {
     public static final String LOGIN_SIGN_PRE = "LOGIN_SIGN_PRE";
     //验证码刷新限制次数和验证码位数和验证码存储时间
     public static final String VERIFYCODE_SIGN_PRE = "VERIFYCODE_SIGN_PRE";
-    public static final int REQUEST_MAX_TIMES = 15;
+    public static final int REQUEST_MAX_TIMES = 25;
     public static final int VERIFYCODE_AMOUNT = 4;
     public static final int VERIFYCODE_EXPIRED = 60;
     //用户正常登录的允许次数,高于此次数,需要增加用户的等待时间

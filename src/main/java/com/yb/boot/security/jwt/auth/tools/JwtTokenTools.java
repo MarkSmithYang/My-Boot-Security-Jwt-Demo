@@ -8,6 +8,7 @@ import com.yb.boot.security.jwt.response.UserDetailsInfo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,8 @@ import org.springframework.util.Base64Utils;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -23,7 +26,7 @@ import java.util.*;
  * date 2018/11/30
  */
 public class JwtTokenTools {
- public static final Logger log = LoggerFactory.getLogger(JwtTokenTools.class);
+    public static final Logger log = LoggerFactory.getLogger(JwtTokenTools.class);
 
 
     /**
@@ -32,7 +35,7 @@ public class JwtTokenTools {
     public static String createAccessToken(UserDetailsInfo detailsInfo, int expireTime,
                                            HttpServletResponse response, JwtProperties jwtProperties) {
         //判断用户信息
-        if(detailsInfo==null){
+        if (detailsInfo == null) {
             log.info("token不合法,解析出的用户信息为null");
             return null;
         }

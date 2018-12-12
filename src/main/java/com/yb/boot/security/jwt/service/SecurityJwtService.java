@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.yb.boot.security.jwt.common.CommonDic;
 import com.yb.boot.security.jwt.exception.ParameterErrorException;
 import com.yb.boot.security.jwt.repository.SysUserRepository;
+import com.yb.boot.security.jwt.request.UserRegister;
 import com.yb.boot.security.jwt.request.UserRequest;
 import com.yb.boot.security.jwt.auth.other.CustomAuthenticationProvider;
 import com.yb.boot.security.jwt.auth.other.MyUsernamePasswordAuthenticationToken;
@@ -22,7 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,9 +41,11 @@ public class SecurityJwtService {
     public static final Logger log = LoggerFactory.getLogger(SecurityJwtService.class);
 
     @Autowired
+    private JwtProperties jwtProperties;
+    @Autowired
     private SysUserRepository sysUserRepository;
     @Autowired
-    private JwtProperties jwtProperties;
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Autowired
     private CustomAuthenticationProvider customAuthenticationProvider;
 
@@ -71,8 +76,8 @@ public class SecurityJwtService {
         //封装数据
         UserDetailsInfo detailsInfo = setUserDetailsInfo(sysUser, request);
         //生成token
-        String accessToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds(), response,jwtProperties);
-        String refreshToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds() * 7, response,jwtProperties);
+        String accessToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds(), response, jwtProperties);
+        String refreshToken = JwtTokenTools.createAccessToken(detailsInfo, jwtProperties.getExpireSeconds() * 7, response, jwtProperties);
         //封装token返回
         JwtToken jwtToken = new JwtToken();
         jwtToken.setAccessToken(CommonDic.TOKEN_PREFIX + accessToken);
@@ -142,5 +147,40 @@ public class SecurityJwtService {
         return detailsInfo;
     }
     //-------------------------------------------------------------------------------------------------------
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addUser(UserRegister userRegister) {
+        //校验密码与确认密码是否一致(虽然前段有做,但是后端必不可少才是正确的选择)
+        if (userRegister.checkPassword()) {
+            ParameterErrorException.message("密码与确认密码不一致");
+        }
+        //封装用户基本信息--没有弄头像信息
+        SysUser sysUser = new SysUser();
+        sysUser.setFrom(userRegister.getFrom());
+        sysUser.setUsername(userRegister.getUsername());
+        //加密用户密码
+        sysUser.setPassword(bCryptPasswordEncoder.encode(userRegister.getPassword()));
+
+        //封装用户基础信息
+        UserInfo userInfo = new UserInfo();
+        userInfo.setDepartment(userRegister.getDepartment());
+        userInfo.setPhone(userRegister.getPhone());
+        userInfo.setPosition(userRegister.getPosition());
+        //把用户基础信息放进用户基本信息
+        sysUser.setUserInfo(userInfo);
+
+        //保存用户信息---权限相关的信息,通过后面超管添加
+        try {
+            sysUserRepository.save(sysUser);
+        } catch (Exception e) {
+            try {
+                sysUserRepository.save(sysUser);
+            } catch (Exception e1) {
+                log.info("用户信息第二次保存失败");
+                //抛出异常-->回滚事务
+                ParameterErrorException.message("用户添加失败");
+            }
+        }
+    }
 
 }

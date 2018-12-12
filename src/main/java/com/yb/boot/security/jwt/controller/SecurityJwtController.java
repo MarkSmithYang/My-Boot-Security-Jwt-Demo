@@ -7,6 +7,7 @@ import com.yb.boot.security.jwt.common.CommonDic;
 import com.yb.boot.security.jwt.common.JwtProperties;
 import com.yb.boot.security.jwt.common.ResultInfo;
 import com.yb.boot.security.jwt.request.RefreshToken;
+import com.yb.boot.security.jwt.request.UserRegister;
 import com.yb.boot.security.jwt.request.UserRequest;
 import com.yb.boot.security.jwt.response.JwtToken;
 import com.yb.boot.security.jwt.response.UserDetailsInfo;
@@ -32,12 +33,18 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import redis.clients.util.IOUtils;
+import sun.nio.ch.IOUtil;
 
 import javax.annotation.security.PermitAll;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.swing.text.View;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -73,7 +80,6 @@ public class SecurityJwtController {
 
     private final String CODE_HEADER = "ae81cac2";
 
-
     @GetMapping("/toLogin")
     public String toLogin() {
         return "/login";
@@ -91,9 +97,22 @@ public class SecurityJwtController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @GetMapping("/queryUserList")
+    public String queryUserList() {
+        return "/index";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/addUser")
+    public String addUser(@Valid UserRegister userRegister) {
+        securityJwtService.addUser(userRegister);
+        return "success";
+    }
+
+    @PreAuthorize("isAuthenticated()")
     //如果想要走自己写的登出接口,接口不能为/logout,这个默认会走配置那里的.logout()
-    @GetMapping("/logout1")
-    public String logout(HttpServletResponse response, HttpServletRequest request) {
+    @GetMapping("/customLogout")
+    public String customLogout(HttpServletResponse response, HttpServletRequest request) {
         //清空用户的登录
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         //正确的登录姿势
@@ -244,7 +263,7 @@ public class SecurityJwtController {
     @ApiOperation("后台登录")
     @PostMapping("/backLogin")
     public String backLogin(@Valid UserRequest userRequest, HttpServletRequest request,
-                            HttpServletResponse response) {
+                            HttpServletResponse response) throws ServletException, IOException {
         getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
         //登录成功之后跳转
         return "/layout";

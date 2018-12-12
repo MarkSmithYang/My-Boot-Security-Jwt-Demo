@@ -43,7 +43,7 @@ public class UserDetailsInfo implements Serializable {
     @ApiModelProperty("用户IP")
     private String ip;
 
-    @ApiModelProperty("用户来源(前台或后台等)")
+    @ApiModelProperty("用户类型(前台或后台等)")
     private String from;
 
     @ApiModelProperty("用户权限")

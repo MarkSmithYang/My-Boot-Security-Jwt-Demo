@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * Description:用户基本详细信息(根据自己的实际情况封装)
@@ -35,6 +36,10 @@ public class UserInfo implements Serializable {
     @ApiModelProperty("基础用户信息")
     @OneToOne(targetEntity = SysUser.class)
     private SysUser sysUser;
+
+    public UserInfo() {
+        this.id = UUID.randomUUID().toString().replaceAll("-", "");
+    }
 
     public String getId() {
         return id;

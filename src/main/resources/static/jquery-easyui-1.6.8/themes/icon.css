@@ -52,6 +52,15 @@
 .icon-menu{
 	background:url('icons/menu.png') no-repeat center center;
 }
+.icon-phone{
+	background:url('icons/phone.png') no-repeat center center;
+}
+.icon-department{
+	background:url('icons/department.png') no-repeat center center;
+}
+.icon-position{
+	background:url('icons/position.png') no-repeat center center;
+}
 .icon-sum{
 	background:url('icons/sum.png') no-repeat center center;
 }

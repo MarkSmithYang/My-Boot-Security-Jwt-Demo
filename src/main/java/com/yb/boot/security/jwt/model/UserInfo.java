@@ -41,12 +41,20 @@ public class UserInfo implements Serializable {
         this.id = UUID.randomUUID().toString().replaceAll("-", "");
     }
 
+    public UserInfo(String id) {
+        this.id = id;
+    }
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setSysUser(SysUser sysUser) {
+        this.sysUser = sysUser;
     }
 
     public String getDepartment() {

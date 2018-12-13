@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.Length;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
@@ -41,11 +42,11 @@ public class UserRegister {
     private String position;
 
     @NotBlank(message = "电话不能为空")
-    @Pattern(regexp = "^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\\d{8}$",message = "电话有误")
+    @Pattern(regexp = "^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\\d{8}$", message = "电话有误")
     @ApiModelProperty("用户电话")
     private String phone;
 
-    @Length(max = 10,message = "用户类型长度过长")
+    @Length(max = 10, message = "用户类型长度过长")
     @NotBlank(message = "用户类型不能为空")
     @ApiModelProperty("用户类型(前台或后台等)")
     private String from;
@@ -53,8 +54,8 @@ public class UserRegister {
     /**
      * 校验密码和确认密码是否一致
      */
-    public boolean checkPassword(){
-        return StringUtils.isNotBlank(this.password)?this.password.equals(this.rePassword):false;
+    public boolean checkPasswordEquals() {
+        return StringUtils.isNotBlank(this.password) ? this.password.equals(this.rePassword) : false;
     }
 
     public String getUsername() {
@@ -62,6 +63,9 @@ public class UserRegister {
     }
 
     public void setUsername(String username) {
+        if (StringUtils.isNotBlank(username)) {
+            username = username.trim();
+        }
         this.username = username;
     }
 
@@ -70,7 +74,11 @@ public class UserRegister {
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        if (StringUtils.isNotBlank(password)) {
+            password = password.trim();
+        }
+        this.password = password.trim();
+
     }
 
     public String getRePassword() {
@@ -78,6 +86,9 @@ public class UserRegister {
     }
 
     public void setRePassword(String rePassword) {
+        if (StringUtils.isNotBlank(rePassword)) {
+            rePassword = rePassword.trim();
+        }
         this.rePassword = rePassword;
     }
 
@@ -86,6 +97,9 @@ public class UserRegister {
     }
 
     public void setDepartment(String department) {
+        if (StringUtils.isNotBlank(department)) {
+            department = department.trim();
+        }
         this.department = department;
     }
 
@@ -94,6 +108,9 @@ public class UserRegister {
     }
 
     public void setPosition(String position) {
+        if (StringUtils.isNotBlank(position)) {
+            position = position.trim();
+        }
         this.position = position;
     }
 
@@ -102,21 +119,27 @@ public class UserRegister {
     }
 
     public void setPhone(String phone) {
+        if (StringUtils.isNotBlank(phone)) {
+            phone = phone.trim();
+        }
         this.phone = phone;
     }
 
     public String getFrom() {
-        if("1".equals(this.from)){
+        if ("1".equals(this.from)) {
             return CommonDic.FROM_FRONT;
-        }else if("2".equals(this.from)){
+        } else if ("2".equals(this.from)) {
             return CommonDic.FROM_BACK;
-        }else {
+        } else {
             ParameterErrorException.message("未知的用户类型");
         }
         return null;
     }
 
     public void setFrom(String from) {
+        if (StringUtils.isNotBlank(from)) {
+            from = from.trim();
+        }
         this.from = from;
     }
 }

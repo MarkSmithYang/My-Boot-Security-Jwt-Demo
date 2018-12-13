@@ -12,6 +12,9 @@
     <script>
         function addUser() {
             $("#fo").form('submit', {
+                url: '/addUser',
+                type: 'post',
+                headers: {'Authorization': token},
                 onSubmit: function () {
                     //api的指的方法validate需要这样用
                     var flag = $(this).form("validate");
@@ -118,7 +121,7 @@
         </div>
         <div id="win" style="background-color: #6b9cde">
             <form id="fo" method="post" action="/addUser">
-                <table align="center" style="border-collapse:separate; border-spacing:0px 15px;">
+                <table align="center" style="border-collapse:separate; border-spacing:0px 11px;">
                     <tr>
                         <td align="right"><label>用户名:</label></td>
                         <td align="center"><input name="username" id="username" type="text" class="easyui-validatebox"
@@ -166,11 +169,16 @@
                         <td align="right"><label>用户类型:</label></td>
                         <td align="left">
                             <select id="from" type="text" name="from" class="easyui-combobox"
-                                    style="width: 80px;height: 25px"
+                                    style="width: 100px;height: 30px"
                                     panelHeight="auto">
                                 <option value="1">前台</option>
                                 <option value="2">后台</option>
                             </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="submit" value="Submit"/>
                         </td>
                     </tr>
                 </table>
@@ -188,10 +196,35 @@
 </div>
 <script>
     //------------------------------------------------------------------
+    $("#username").textbox({
+        iconCls: 'icon-man',
+        iconAlign: 'right'
+    });
+    $("#pwd").textbox({
+        iconCls: 'icon-lock',
+        iconAlign: 'right'
+    });
+    $("#rpwd").textbox({
+        iconCls: 'icon-lock',
+        iconAlign: 'right'
+    });
+    $("#department").textbox({
+        iconCls: 'icon-department',
+        iconAlign: 'right'
+    });
+    $("#position").textbox({
+        iconCls: 'icon-position',
+        iconAlign: 'right'
+    });
+    $("#phone").textbox({
+        iconCls: 'icon-phone',
+        iconAlign: 'right'
+    });
+    //------------------------------------------------------------------
     $('#win').dialog({
         title: '添加用户',
         width: 500,
-        height: 400,
+        height: 425,
         iconCls: 'icon-save',
         closed: true,
         cache: false,

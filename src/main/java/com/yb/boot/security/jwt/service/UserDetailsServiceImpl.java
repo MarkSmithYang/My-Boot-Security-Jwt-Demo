@@ -51,13 +51,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         //获取from因为new MyUsernamePasswordAuthenticationToken传递进来的,不用判断所属也可以直接强转的
         String from = ((MyUsernamePasswordAuthenticationToken) authentication).getFrom();
         //进行自定义的逻辑认证--(如果用户名可能是电话号码,邮箱地址,用户名,这个需要逐个去查询判断)
-        SysUser sysUser = sysUserRepository.findByUsernameAndFrom(username, from);
+        SysUser sysUser = sysUserRepository.findByUsernameAndUserFrom(username, from);
         //判断用户名是否正确
         if (sysUser == null) {
             ParameterErrorException.message("用户名或密码错误或您的账号不属于此系统");
         }
         //判断用户密码是否正确
-        if (!bCryptPasswordEncoder.matches(password, sysUser.getPassword())) {
+        if (!bCryptPasswordEncoder.matches(password, sysUser.getUserPassword())) {
             ParameterErrorException.message("用户名或密码错误");
         }
         //封装数据到UserDetailsli

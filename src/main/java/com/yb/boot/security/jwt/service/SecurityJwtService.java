@@ -3,6 +3,8 @@ package com.yb.boot.security.jwt.service;
 import com.alibaba.fastjson.JSONObject;
 import com.yb.boot.security.jwt.common.CommonDic;
 import com.yb.boot.security.jwt.exception.ParameterErrorException;
+import com.yb.boot.security.jwt.model.Permission;
+import com.yb.boot.security.jwt.model.Role;
 import com.yb.boot.security.jwt.repository.SysUserRepository;
 import com.yb.boot.security.jwt.request.UserRegister;
 import com.yb.boot.security.jwt.request.UserRequest;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -113,7 +116,7 @@ public class SecurityJwtService {
         detailsInfo.setHeadUrl(sysUser.getHeadUrl());
         detailsInfo.setUsername(sysUser.getUsername());
         detailsInfo.setIp(ipAddress);
-        detailsInfo.setFrom(sysUser.getFrom());
+        detailsInfo.setFrom(sysUser.getUserFrom());
         //获取权限角色的集合
         Set<String> permissions = detailsInfo.getPermissions();
         Set<String> roles = detailsInfo.getRoles();
@@ -151,24 +154,83 @@ public class SecurityJwtService {
     @Transactional(rollbackFor = Exception.class)
     public void addUser(UserRegister userRegister) {
         //校验密码与确认密码是否一致(虽然前段有做,但是后端必不可少才是正确的选择)
-        if (userRegister.checkPassword()) {
+        if (!userRegister.checkPasswordEquals()) {
             ParameterErrorException.message("密码与确认密码不一致");
         }
         //封装用户基本信息--没有弄头像信息
         SysUser sysUser = new SysUser();
-        sysUser.setFrom(userRegister.getFrom());
+        sysUser.setUserFrom(userRegister.getFrom());
         sysUser.setUsername(userRegister.getUsername());
         //加密用户密码
-        sysUser.setPassword(bCryptPasswordEncoder.encode(userRegister.getPassword()));
-
+        sysUser.setUserPassword(bCryptPasswordEncoder.encode(userRegister.getPassword()));
         //封装用户基础信息
         UserInfo userInfo = new UserInfo();
         userInfo.setDepartment(userRegister.getDepartment());
         userInfo.setPhone(userRegister.getPhone());
         userInfo.setPosition(userRegister.getPosition());
+        //这一步特别重要,不做此步,userInfo的外键就是null(实测),先相互set的顺序并不影响添加
+        //建议要保存的放在最后set其他的对象,如下sysUser-->实测只需只有id的对象即可,这样可以
+        //减少封装,还可以避免反复嵌套让对象显得太笨重
+        userInfo.setSysUser(new SysUser(sysUser.getId()));
         //把用户基础信息放进用户基本信息
         sysUser.setUserInfo(userInfo);
+        //构造容器
+        Set<Role> set = new HashSet<>();
+        Set<Permission> pSet1 = new HashSet<>();
+        Set<Permission> pSet2 = new HashSet<>();
+        //构造权限对象
+        Permission permission1 = new Permission("pp1", "屁屁1");
+        Permission permission2 = new Permission("pp2", "屁屁2");
+        Permission permission3 = new Permission("pp3", "屁屁3");
+        //添加一个权限到集合
+        pSet2.add(permission1);
+        //添加三个权限到集合
+//        pSet1.add(permission1);
+        pSet1.add(permission2);
+        pSet1.add(permission3);
+        //构造角色对象信息并把对应的权限封装进去
+        Role role1 = new Role("role1", "角色1", pSet2);
+        Role role2 = new Role("role2", "角色2", pSet1);
+        //-----------------------------------------------------------------------------------------
+//        //角色对应权限需要封装其角色,为了生成中间表信息--当然了你如果知道了那些角色对应那些权限
+//        //可以先封装,个人角色这样遍历的方式比较好,既然知道了角色对应的权限,就可以开始封装关联了
+//        pSet2.forEach(s->{
+//            s.setRoles(new HashSet<Role>() {{
+//                add(new Role(role1.getId()));
+//            }});
+//        });
+//        //注意--->当多个角色拥有相同的权限的时候,需要把多个角色封装到集合再和权限关联,不然就像我
+//        //这里一样遍历,就会把关联两个角色的权限里的角色id覆盖为最后的值,前面的就被覆盖了
+//        Role role2 = new Role("role2", "角色2", pSet1);
+//        //角色对应权限需要封装其角色,为了生成中间表信息
+//        pSet1.forEach(s->{
+//            s.setRoles(new HashSet<Role>() {{
+//                //原本想在这通过获取权限是否含有角色来处理,但是不能提供对应的get方法,因为
+//                //如果提供的话,就会造成获取关联的数据的时候造成递归等json解析异常
+//                add(new Role(role2.getId()));
+//            }});
+//        });
+        //-----------------------------------------------------------------------------------------
+        //由于上面的这种方式会造成覆盖的问题,所以我才去另一种方式处理
+        //合并两集合的权限--含有的相同的权限合并为一个
+//        pSet1.addAll(pSet2);
+//        //合并两角色(封装两角色到集合)
+//        set.add(role1);
+//        set.add(role2);
+//        //然后相互set即可
 
+
+        //封装sysUser信息,目的是为了生成中间表/外键信息
+        role1.setUsers(new HashSet<SysUser>() {{
+            add(new SysUser(sysUser.getId()));
+        }});
+
+        //这里应该是重写父类方法操作的多态(知道可以这样用,但是没仔细研究)
+        role2.setUsers(new HashSet<SysUser>() {{
+            add(new SysUser(sysUser.getId()));
+        }});
+        //把角色封装到sysUser
+        sysUser.setRoles(set);
         //保存用户信息---权限相关的信息,通过后面超管添加
         try {
             sysUserRepository.save(sysUser);

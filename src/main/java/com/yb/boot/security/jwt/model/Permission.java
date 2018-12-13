@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * author yangbiao
@@ -76,6 +77,32 @@ public class Permission implements Serializable {
                 .append(id)
                 .append(permission)
                 .toHashCode();
+    }
+
+    public Permission() {
+        this.id= UUID.randomUUID().toString().replaceAll("-", "");
+    }
+
+    public Permission(String id) {
+        this.id = id;
+    }
+
+    public Permission(String permission, String permissionCn) {
+        this.permission = permission;
+        this.permissionCn = permissionCn;
+        this.id= UUID.randomUUID().toString().replaceAll("-", "");
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    public void setUsers(Set<SysUser> users) {
+        this.users = users;
+    }
+
+    public void setModules(Set<Module> modules) {
+        this.modules = modules;
     }
 
     public String getId() {

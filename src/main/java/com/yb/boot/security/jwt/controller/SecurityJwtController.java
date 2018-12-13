@@ -102,7 +102,7 @@ public class SecurityJwtController {
         return "/index";
     }
 
-    @PreAuthorize("isAuthenticated()")
+//    @PreAuthorize("isAuthenticated()")
     @PostMapping("/addUser")
     public String addUser(@Valid UserRegister userRegister) {
         securityJwtService.addUser(userRegister);

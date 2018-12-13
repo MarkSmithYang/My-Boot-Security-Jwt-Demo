@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * author yangbiao
@@ -39,7 +40,8 @@ public class Role implements Serializable {
      * 角色权限
      */
     @ApiModelProperty("角色权限")
-    @ManyToMany(targetEntity = Permission.class,mappedBy = "roles",fetch = FetchType.EAGER)
+    @ManyToMany(targetEntity = Permission.class,mappedBy = "roles",fetch = FetchType.EAGER,
+            cascade = CascadeType.MERGE)
     private Set<Permission> permissions;
 
     /**
@@ -69,6 +71,25 @@ public class Role implements Serializable {
                 .append(id)
                 .append(role)
                 .toHashCode();
+    }
+
+    public Role() {
+        this.id= UUID.randomUUID().toString().replaceAll("-", "");
+    }
+
+    public Role(String id) {
+        this.id = id;
+    }
+
+    public Role(String role, String roleCn, Set<Permission> permissions) {
+        this.role = role;
+        this.roleCn = roleCn;
+        this.permissions = permissions;
+        this.id= UUID.randomUUID().toString().replaceAll("-", "");
+    }
+
+    public void setUsers(Set<SysUser> users) {
+        this.users = users;
     }
 
     public String getId() {
@@ -102,4 +123,5 @@ public class Role implements Serializable {
     public void setPermissions(Set<Permission> permissions) {
         this.permissions = permissions;
     }
+
 }

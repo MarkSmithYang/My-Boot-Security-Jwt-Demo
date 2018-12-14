@@ -74,14 +74,14 @@ public class SysUser implements Serializable {
      */
     @ApiModelProperty("用户模块")
     @ManyToMany(targetEntity = Module.class, mappedBy = "users", fetch = FetchType.EAGER)
-    private Set<Module> modules;
+    private Set<Module> modules= new HashSet<>();
 
     /**
      * 用户权限
      */
     @ApiModelProperty("用户权限")
     @ManyToMany(targetEntity = Permission.class, mappedBy = "users", fetch = FetchType.EAGER)
-    private Set<Permission> permissions;
+    private Set<Permission> permissions= new HashSet<>();
 
     /**
      * 用户角色
@@ -97,7 +97,7 @@ public class SysUser implements Serializable {
             //注意,这里角色的权限没有做添加,如果添加需要在角色里添加级联权限的操作(实测如果没有设置就添加就会报错),
             //和sysUsery与Role的做法相似
             cascade = CascadeType.MERGE)
-    private Set<Role> roles;
+    private Set<Role> roles= new HashSet<>();
 
     public SysUser() {
         this.id = UUID.randomUUID().toString().replaceAll("-", "");

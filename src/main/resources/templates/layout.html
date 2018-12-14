@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="../static/js/preFilter.js">
+    <link rel="stylesheet" type="text/css" href="../static/js/jquery-3.3.1.js">
     <link rel="stylesheet" type="text/css" href="../static/jquery-easyui-1.6.8/themes/default/easyui.css">
     <link rel="stylesheet" type="text/css" href="../static/jquery-easyui-1.6.8/themes/icon.css">
     <link rel="stylesheet" type="text/css" href="../static/jquery-easyui-1.6.8/demo/demo.css">
@@ -11,9 +14,11 @@
     <title>用户后台管理</title>
     <script>
         function addUser() {
+            var token = document.getElementById("f").value;
+
             $("#fo").form('submit', {
                 url: '/addUser',
-                type: 'post',
+                novalidate:true,
                 headers: {'Authorization': token},
                 onSubmit: function () {
                     //api的指的方法validate需要这样用
@@ -35,6 +40,7 @@
 </head>
 <body class="easyui-panel" title="<center><b style='font-size: medium;color: #0E2D5F'>后台用户管理系统</b></center>"
       data-options="fit:true">
+<input type="text" th:value="${token}" id="f"/>
 <div class="easyui-layout" data-options="fit:true">
     <div data-options="region:'north',border:false" style="height:30px;background:#B3DFDA;padding:5px;" align="right">
         <input class="easyui-textbox" align="right" iconCls="icon-search" style="width: 130px;height: 22px;">
@@ -108,7 +114,7 @@
                     <a id="aa" href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true"
                        onclick="javascript:$('#win').dialog('open')">添加用户</a>
                     <a href="#" class="easyui-linkbutton" iconCls="icon-save" plain="true"
-                       onclick="editUsers()">修改信息</a>
+                    >修改信息</a>
                     <a href="#" class="easyui-linkbutton" iconCls="icon-cut" plain="true"
                        onclick="removeUsers()">删除用户</a>
                 </div>

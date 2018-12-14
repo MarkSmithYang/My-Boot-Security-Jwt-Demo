@@ -45,6 +45,18 @@ public class UserInfo implements Serializable {
         this.id = id;
     }
 
+    /**
+     * 用以替代get方法获取数据,因为get方法会被jpa(Hibernate)用来获取关联对象的数据,
+     * 会造成嵌套循环递归的获取数据而造成异常,所以只需要更换get方法名称即可,当然了
+     * set方法也可以改名字,但是实测似乎不改也没什么问题,需要更改的是那种被获取的对象,
+     * 例如sysUser获取Role,它们是多对多,我把Role看成相对多的一方,然后就需要更改Role里
+     * 获取sysUser集合的get方法,因为sysUser获取角色集合后,角色再获取的用户的话,就会一直
+     * 循环下去,知道堆栈溢出
+     */
+    public SysUser findSysUser() {
+        return sysUser;
+    }
+
     public String getId() {
         return id;
     }

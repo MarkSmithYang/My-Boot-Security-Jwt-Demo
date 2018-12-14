@@ -1,5 +1,6 @@
 package com.yb.boot.security.jwt.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.yb.boot.security.jwt.auth.tools.AntiViolenceCheckTools;
 import com.yb.boot.security.jwt.auth.tools.JwtTokenTools;
 import com.yb.boot.security.jwt.common.CaptchaParam;
@@ -31,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import redis.clients.util.IOUtils;
@@ -263,8 +265,11 @@ public class SecurityJwtController {
     @ApiOperation("后台登录")
     @PostMapping("/backLogin")
     public String backLogin(@Valid UserRequest userRequest, HttpServletRequest request,
-                            HttpServletResponse response) throws ServletException, IOException {
-        getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
+                            HttpServletResponse response, Model model) throws ServletException, IOException {
+        ResultInfo<JwtToken> jwtTokenResultInfo = getJwtTokenResultInfo(userRequest, request, response, CommonDic.FROM_BACK);
+        JwtToken data = jwtTokenResultInfo.getData();
+        String accessToken = data.getAccessToken();
+        model.addAttribute("token",accessToken);
         //登录成功之后跳转
         return "/layout";
     }

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -41,14 +42,14 @@ public class Module implements Serializable {
      */
     @ApiModelProperty("模块用户")
     @ManyToMany(targetEntity = SysUser.class, fetch = FetchType.LAZY)
-    private Set<SysUser> users;
+    private Set<SysUser> users= new HashSet<>();
 
     /**
      * 模块权限
      */
     @ApiModelProperty("模块权限")
     @ManyToMany(targetEntity = Permission.class, mappedBy = "modules", fetch = FetchType.EAGER)
-    private Set<Permission> permissions;
+    private Set<Permission> permissions= new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
@@ -86,6 +87,18 @@ public class Module implements Serializable {
         this.moduleCn = moduleCn;
         this.users = users;
         this.permissions = permissions;
+    }
+
+    /**
+     * 用以替代get方法获取数据,因为get方法会被jpa(Hibernate)用来获取关联对象的数据,
+     * 会造成嵌套循环递归的获取数据而造成异常,所以只需要更换get方法名称即可,当然了
+     * set方法也可以改名字,但是实测似乎不改也没什么问题,需要更改的是那种被获取的对象,
+     * 例如sysUser获取Role,它们是多对多,我把Role看成相对多的一方,然后就需要更改Role里
+     * 获取sysUser集合的get方法,因为sysUser获取角色集合后,角色再获取的用户的话,就会一直
+     * 循环下去,知道堆栈溢出
+     */
+    public Set<SysUser> findUsers() {
+        return users;
     }
 
     public void setUsers(Set<SysUser> users) {

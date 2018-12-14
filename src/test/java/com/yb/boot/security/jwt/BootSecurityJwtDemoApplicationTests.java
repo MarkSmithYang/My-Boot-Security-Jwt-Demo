@@ -19,16 +19,6 @@ public class BootSecurityJwtDemoApplicationTests {
 
     @Test
     public void contextLoads() {
-        UserRegister userRegister = new UserRegister();
-        userRegister.setDepartment("1");
-        userRegister.setFrom("1");
-        userRegister.setPassword("111");
-        userRegister.setRePassword("111");
-        userRegister.setPhone("1");
-        userRegister.setPosition("1j");
-        userRegister.setUsername("1Jj");
-        securityJwtService.addUser(userRegister);
-        System.err.println("------------------------------ok");
 
     }
 }

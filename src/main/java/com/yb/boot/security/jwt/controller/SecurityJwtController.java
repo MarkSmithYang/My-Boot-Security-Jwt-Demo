@@ -84,7 +84,7 @@ public class SecurityJwtController {
     }
 
     @ApiOperation("通过用户id查询用户信息")
-    @PostMapping("/findUserById")
+    @GetMapping("/findUserById")
     public ResultInfo<SysUser> findUserById(@ApiParam(name = "id", value = "用户id")
                                             //实测通过swagger不填写id的时候会先抛出MissingServletRequestParameterException异常的id不存在的英文
                                             //所以根本来不到注解@NotBlank这里,刚开始还以为是@NotBlank抛出的,竟然没有中文,实测发现还没有到
@@ -97,7 +97,7 @@ public class SecurityJwtController {
     }
 
     @ApiOperation("通过用户id删除用户信息")
-    @PostMapping("/deleteUserById")
+    @GetMapping("/deleteUserById")
     public ResultInfo<String> deleteUserById(@ApiParam(name = "id", value = "用户id")
                                               //实测通过swagger不填写id的时候会先抛出MissingServletRequestParameterException异常的id不存在的英文
                                               //所以根本来不到注解@NotBlank这里,刚开始还以为是@NotBlank抛出的,竟然没有中文,实测发现还没有到

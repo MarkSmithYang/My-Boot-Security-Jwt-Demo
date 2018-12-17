@@ -42,7 +42,7 @@ public class Role implements Serializable {
      */
     @ApiModelProperty("角色权限")
     @ManyToMany(targetEntity = Permission.class,mappedBy = "roles",fetch = FetchType.EAGER,
-            cascade = CascadeType.MERGE)
+            cascade = CascadeType.ALL)
     private Set<Permission> permissions= new HashSet<>();
 
     /**

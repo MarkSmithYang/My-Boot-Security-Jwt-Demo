@@ -1,8 +1,6 @@
 package com.yb.boot.security.jwt.auth.config;
 
 import com.yb.boot.security.jwt.auth.impl.AccessDeniedHandlerImpl;
-import com.yb.boot.security.jwt.common.CommonDic;
-import com.yb.boot.security.jwt.service.UserDetailsServiceImpl;
 import com.yb.boot.security.jwt.auth.other.CustomAuthenticationProvider;
 import com.yb.boot.security.jwt.auth.other.JwtAuthenticationFilter;
 import com.yb.boot.security.jwt.auth.other.RedisSecurityContextRepository;
@@ -11,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,11 +17,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
-
-import javax.sql.DataSource;
-import java.io.Serializable;
 
 /**
  * author yangbiao
@@ -35,10 +27,6 @@ import java.io.Serializable;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    private DataSource dataSource;
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
     @Autowired
     private AuthenticationEntryPointImpl authenticationEntryPoint;
     @Autowired
@@ -86,44 +74,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 //所有请求需要身份认证
                 .anyRequest().authenticated().and()
                 //添加一个过滤器,对其他请求的token进行合法性认证
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .formLogin()
-                //指定登录页是"/login"
-                .loginPage("/login")
-                //登录成功后默认跳转到"/index"--->还是要通过登录接口跳转,可能通过记住密码会走这里
-                .defaultSuccessUrl("/index");
-        //自定义注销---默认优先走它--实测证明,如果自己写的登出接口路径为/logout,那么它就会走这个配置登出
-        //如果名字不一样,就走自定义的登出
-        http.logout().logoutUrl("/logout")
-                //退出登录后的默认url是"/toLogin"
-                .logoutSuccessUrl("/toLogin")
-                .invalidateHttpSession(true);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        //记住我功能配置
-        http.authorizeRequests()
-                .and()
-                .rememberMe()
-                //TokenRepository，登录成功后往数据库存token的
-                .tokenRepository(persistentTokenRepository())
-                //记住我秒数(一周)
-                .tokenValiditySeconds(CommonDic.REMEMBER_ME_TIME)
-                //记住我成功后，调用userDetailsService查询用户信息
-                .userDetailsService(userDetailsService);
     }
 
-    /**
-     * 此功能暂时无法测试
-     */
-    @Bean
-    public PersistentTokenRepository persistentTokenRepository() {
-        JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
-        jdbcTokenRepository.setDataSource(dataSource);
-        //启动时自动生成相应表，可以在JdbcTokenRepositoryImpl里自己执行CREATE_TABLE_SQL脚本生成表
-        //jdbcTokenRepository.setCreateTableOnStartup(true);
-        return jdbcTokenRepository;
-    }
-
-    //解决过滤器无法注入Bean的问题
+    //解决过滤器无法注入(依赖)Bean的问题
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();

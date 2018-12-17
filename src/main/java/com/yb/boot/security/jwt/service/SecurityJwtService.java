@@ -22,6 +22,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -151,6 +154,9 @@ public class SecurityJwtService {
     }
     //-------------------------------------------------------------------------------------------------------
 
+    /**
+     * 添加用户
+     */
     @Transactional(rollbackFor = Exception.class)
     public void addUser(UserRegister userRegister) {
         //校验密码与确认密码是否一致(虽然前段有做,但是后端必不可少才是正确的选择)
@@ -241,9 +247,50 @@ public class SecurityJwtService {
             } catch (Exception e1) {
                 log.info("用户信息第二次保存失败="+e1.getMessage());
                 //抛出异常-->回滚事务
-                ParameterErrorException.message("用户添加失败");
+                ParameterErrorException.message("操作失败");
             }
         }
     }
 
+    /**
+     * 查询用户信息列表(因为数据少,未分页)
+     */
+    public List<SysUser> queryUserList() {
+        List<SysUser> result = sysUserRepository.findAll(Sort.by(Sort.Direction.DESC,"createTime"));
+        return result;
+    }
+
+    /**
+     * 通过用户id查询用户信息
+     */
+    public SysUser findUserById(String id) {
+        Optional<SysUser> result = sysUserRepository.findById(id);
+       return result.isPresent()?result.get():null;
+    }
+
+    /**
+     * 通过用户id删除用户信息
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteUserById(String id) {
+        //判断用户是否存在,存在才删除--(调用上面的方法)
+        SysUser userById = findUserById(id);
+        if(userById==null){
+            ParameterErrorException.message("id不能正确");
+        }
+        //删除用户信息-->开始因为没有设置级联删除,所以会报错,更改级联操作为ALL(包含级联删除)的时候,
+        //实测成功删除,因为添加的时候是级联添加,所以这样级联删除比较好,因为不级联删除就需要一层一层
+        //先去删除中间表需要做许多次的访问数据库删除操作,特别麻烦,当然了可以根据自己的需要更改策略
+        try {
+            sysUserRepository.deleteById(id);
+        } catch (Exception e) {
+            try {
+                sysUserRepository.deleteById(id);
+            } catch (Exception e1) {
+                log.info("第二次删除异常="+e1.getMessage());
+                //抛出异常回滚事务
+                ParameterErrorException.message("操作失败");
+            }
+        }
+    }
 }

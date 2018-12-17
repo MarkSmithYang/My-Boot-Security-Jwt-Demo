@@ -66,7 +66,7 @@ public class SysUser implements Serializable {
             //虽然sysUser不是主控方,但是依旧可以这样保存成功,刚才一直没有保存成功是因为属性设置生成的数据库表
             //字段是mysql的关键字,例如from和password,所以一直报sql错误,找了半天,最后把映射改了之后就可以了
             //实测,当没有设置级联操作的时候,userInfo是没法添加信息的
-            cascade = CascadeType.MERGE)
+            cascade = CascadeType.ALL)
     private UserInfo userInfo;
 
     /**
@@ -96,7 +96,7 @@ public class SysUser implements Serializable {
             //集合再set即可,注意每个角色关联与否(能否需要生成相关联的中间表的信息,就需要自己来添加,一般来说都是需要的)
             //注意,这里角色的权限没有做添加,如果添加需要在角色里添加级联权限的操作(实测如果没有设置就添加就会报错),
             //和sysUsery与Role的做法相似
-            cascade = CascadeType.MERGE)
+            cascade = CascadeType.ALL)
     private Set<Role> roles= new HashSet<>();
 
     public SysUser() {

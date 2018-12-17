@@ -2,7 +2,6 @@ package com.yb.boot.security.jwt.request;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 

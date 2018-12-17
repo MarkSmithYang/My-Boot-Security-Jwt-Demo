@@ -12,18 +12,6 @@ import org.springframework.web.servlet.config.annotation.*;
 public class WebMvcConfig extends WebMvcConfigurationSupport {
 
     /**
-     * 视图控制器配置--没有登录用户都跳转到login.html页面的配置
-     */
-    @Override
-    protected void addViewControllers(ViewControllerRegistry registry) {
-        //接口/login跳转视图login(应该就是login.html或login.jsp,但是似乎没有什么效果)
-        registry.addViewController("/toLogin").setViewName("/login");
-        //处理/没有映射的问题(日志老是打印出来,也可以在controller写接口)--这里省了写/跳转到login的接口了
-        registry.addViewController("/").setViewName("/login");
-        super.addViewControllers(registry);
-    }
-
-    /**
      * 发现如果继承了WebMvcConfigurationSupport,
      * 则在yml中配置的相关内容会失效,需要重新指定静态资源,配置如下即可显示swagger-ui.html
      */

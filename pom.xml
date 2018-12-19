@@ -54,6 +54,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!--配合@ConfigurationProperties来进行数据装配到实体,配置文件那里会提示,但是并不使用,最好加上此依赖-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
         <!--添加jwt依赖-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

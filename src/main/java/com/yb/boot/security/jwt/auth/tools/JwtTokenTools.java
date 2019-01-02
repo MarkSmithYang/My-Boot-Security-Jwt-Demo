@@ -5,9 +5,7 @@ import com.yb.boot.security.jwt.common.CommonDic;
 import com.yb.boot.security.jwt.common.JwtProperties;
 import com.yb.boot.security.jwt.exception.ParameterErrorException;
 import com.yb.boot.security.jwt.response.UserDetailsInfo;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -28,6 +26,44 @@ import java.util.*;
 public class JwtTokenTools {
     public static final Logger log = LoggerFactory.getLogger(JwtTokenTools.class);
 
+    /**
+     * 简易版生成token方法,这个就是不需要封装不敏感信息给前端,而且不添加一些额外的标准校验
+     * 这个就是基础的生成jwt的方法
+     */
+    private static String getToken() {
+        String token = Jwts.builder()
+                .setExpiration(new Date(System.currentTimeMillis() + 30 * 60 * 1000))
+                //printXXX 的函数就是encode，parseXXX 的函数就是decode,
+                // 比如,String printBase64Binary(byte[])就是将字节数组做base64编码,
+                // byte[] parseBase64Binary(String) 就是将Base64编码后的String还原成字节数组
+                .signWith(SignatureAlgorithm.HS512, DatatypeConverter.printBase64Binary("秘钥".getBytes()))
+                .compact();
+        return token;
+    }
+
+    /**
+     * 通过调用此方法来验证传递过来的token的合法性,返回null就是解析错误
+     */
+    private static Claims checkToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(DatatypeConverter.parseBase64Binary("经DatatypeConverter编码后的秘钥"))
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims;
+            //通过以下的方式即可获取到token的荷载信息,解析这里根本不需要通过Claims去获取信息,麻烦,
+            //而且前端也可以自己来解析获取荷载信息
+            //解析jwt并获取用户详细信息
+            //String[] split = token.split("\\.");
+            //如果token切割的split数组长度不为3,说明token不正确(防止抛出异常)
+            //String claims = new String(Base64Utils.decodeFromUrlSafeString(split.length == 3 ? split[1] : ""));
+            //解析字符串获取用户详细信息对象
+            //UserDetailsInfo detailsInfo = JSONObject.parseObject(claims, UserDetailsInfo.class);
+        } catch (Exception e) {
+            log.info("解析token错误异常:" + e.getMessage());
+            return null;
+        }
+    }
 
     /**
      * 生成jwt令牌
@@ -88,17 +124,22 @@ public class JwtTokenTools {
      */
     public static Claims parseJwt(String token, JwtProperties jwtProperties) {
         //解析Jwt字符串
-        Claims claims = Jwts.parser()
-                //验证秘钥--秘钥需和生成jwt的秘钥完全保持一致
-                //(本人觉得这里它肯定通过某种方式知道其加密算法,或者根本不需要知道加密算法)
-                .setSigningKey(DatatypeConverter.parseBase64Binary(jwtProperties.getSecret()))
-                //验证对应的标准claim
-                .requireAudience(jwtProperties.getAud())//不要可以的仅仅只是多验证点东西而已
-                .requireIssuer(jwtProperties.getIss())//不要可以的仅仅只是多验证点东西而已
-                //获取声明信息
-                .parseClaimsJws(token.replace(CommonDic.TOKEN_PREFIX, ""))
-                .getBody();
-        return claims;
+        try {
+            Claims claims = Jwts.parser()
+                    //验证秘钥--秘钥需和生成jwt的秘钥完全保持一致
+                    //(本人觉得这里它肯定通过某种方式知道其加密算法,或者根本不需要知道加密算法)
+                    .setSigningKey(DatatypeConverter.parseBase64Binary(jwtProperties.getSecret()))
+                    //验证对应的标准claim
+                    .requireAudience(jwtProperties.getAud())//不要可以的仅仅只是多验证点东西而已
+                    .requireIssuer(jwtProperties.getIss())//不要可以的仅仅只是多验证点东西而已
+                    //获取声明信息
+                    .parseClaimsJws(token.replace(CommonDic.TOKEN_PREFIX, ""))
+                    .getBody();
+            return claims;
+        } catch (Exception e) {
+            log.info("解析token异常为=" + e.getMessage());
+            return null;
+        }
     }
 
     /**

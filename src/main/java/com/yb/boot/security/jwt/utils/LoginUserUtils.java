@@ -4,6 +4,7 @@ import com.yb.boot.security.jwt.response.UserDetailsInfo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -19,7 +20,8 @@ public class LoginUserUtils {
     //用户的创建时间哪里因为jwt不好处理,所以这类不提供,如果有需要可通过id去获取
     @ApiModelProperty("设置用户信息")
     public static void setUserDetailsInfo(UserDetailsInfo userDetailsInfo) {
-        detailsInfo.set(userDetailsInfo);
+        Optional<UserDetailsInfo> detailsInfo = Optional.ofNullable(userDetailsInfo);
+        LoginUserUtils.detailsInfo.set(detailsInfo.isPresent()?detailsInfo.get():null);
     }
 
     @ApiModelProperty("获取用户信息")

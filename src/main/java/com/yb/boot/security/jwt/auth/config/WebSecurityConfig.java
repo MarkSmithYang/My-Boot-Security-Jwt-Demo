@@ -53,7 +53,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.httpBasic().disable()
                 //添加处理ajxa的类实例
                 .exceptionHandling().accessDeniedHandler(accessDeniedHandlerImpl)
-                //添加拦截未登录用户访问的提示类实例
+                //添加拦截未登录用户访问的提示类实例,因为AuthenticationEntryPoint接口只有一个方法,可以用lambda来直接实现,而不用写类注入
                 .authenticationEntryPoint(authenticationEntryPoint).and()
                 //添加改session为redis存储实例
                 .securityContext().securityContextRepository(redisSecurityContextRepository).and()

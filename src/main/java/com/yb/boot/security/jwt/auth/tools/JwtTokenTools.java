@@ -169,7 +169,7 @@ public class JwtTokenTools {
 
     /**
      * 获取jwt的唯一标识jti---这个我没有使用了,因为parse的时候,没法获取用户关联的jti,
-     * 所以个人觉得写入jwt也没太大的意义
+     * 所以个人觉得写入jwt也没太大的意义,但是可以关联jwt后存入redis,校验合法性的校验其是否存在,可以通过置空它,让它关联的jwt失效
      */
     public static String getJti() {
         return UUID.randomUUID().toString().replace("-", "");
